@@ -131,7 +131,11 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.statusBox}>
           {!morningDone && <Text style={styles.statusText}>⚔️  Lance ta quête du matin !</Text>}
           {morningDone && !eveningDone && isPremium && <Text style={styles.statusText}>🌟  Super ce matin ! La quête du soir t'attend.</Text>}
-          {morningDone && (!isPremium || eveningDone) && <Text style={styles.statusText}>🏆  Journée accomplie ! Tu es un vrai héros.</Text>}
+          {morningDone && (!isPremium || eveningDone) && (
+            <Text style={styles.statusText}>
+              🏆  Journée accomplie ! Tu es {profile.gender === 'girl' ? 'une vraie héroïne' : 'un vrai héros'}.
+            </Text>
+          )}
         </View>
       </ScrollView>
 

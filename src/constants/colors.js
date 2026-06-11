@@ -39,8 +39,27 @@ export const GRADIENTS = {
 };
 
 export const AVATAR_THEMES = {
+  // Legacy (backward compat)
   dragon: { emoji: '🐉', color: '#EF4444', bg: '#FEE2E2', gradient: ['#EF4444', '#DC2626'] },
   hero:   { emoji: '🦸', color: '#6C3AE8', bg: '#EDE9FE', gradient: ['#6C3AE8', '#8B5CF6'] },
   wizard: { emoji: '🧙', color: '#3B82F6', bg: '#DBEAFE', gradient: ['#3B82F6', '#6366F1'] },
   fox:    { emoji: '🦊', color: '#F97316', bg: '#FED7AA', gradient: ['#F97316', '#FBBF24'] },
+  // Boy avatars
+  superhero: { emoji: '🦸', color: '#3B82F6', bg: '#DBEAFE', gradient: ['#3B82F6', '#1D4ED8'] },
+  ninja:     { emoji: '🥷', color: '#374151', bg: '#F3F4F6', gradient: ['#374151', '#111827'] },
+  astronaut: { emoji: '🚀', color: '#06B6D4', bg: '#CFFAFE', gradient: ['#06B6D4', '#0E7490'] },
+  // Girl avatars
+  princess: { emoji: '👸', color: '#EC4899', bg: '#FCE7F3', gradient: ['#EC4899', '#DB2777'] },
+  fairy:    { emoji: '🧚', color: '#A855F7', bg: '#F3E8FF', gradient: ['#A855F7', '#7C3AED'] },
+  mermaid:  { emoji: '🧜', color: '#06B6D4', bg: '#CFFAFE', gradient: ['#06B6D4', '#0891B2'] },
+  witch:    { emoji: '🧙', color: '#7C3AED', bg: '#EDE9FE', gradient: ['#7C3AED', '#5B21B6'] },
+};
+
+export const BOY_AVATARS  = ['superhero', 'dragon', 'ninja', 'astronaut'];
+export const GIRL_AVATARS = ['princess', 'fairy', 'mermaid', 'witch'];
+
+export const AVATAR_LABELS = {
+  superhero: 'Super-Héros', dragon: 'Dragon', ninja: 'Ninja', astronaut: 'Astronaute',
+  princess: 'Princesse', fairy: 'Fée', mermaid: 'Sirène', witch: 'Sorcière',
+  hero: 'Héros', wizard: 'Sorcier', fox: 'Renard',
 };

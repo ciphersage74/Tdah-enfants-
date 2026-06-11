@@ -5,26 +5,28 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, AVATAR_THEMES, GRADIENTS } from '../constants/colors';
+import { COLORS, AVATAR_THEMES, AVATAR_LABELS, BOY_AVATARS, GIRL_AVATARS, GRADIENTS } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
 import HeroAvatar from '../components/HeroAvatar';
 
-const AVATARS = Object.keys(AVATAR_THEMES);
-const AVATAR_LABELS = { dragon: 'Dragon', hero: 'Héros', wizard: 'Sorcier', fox: 'Renard' };
-const STEPS = ['name', 'age', 'avatar', 'pin'];
+const STEPS = ['name', 'gender', 'age', 'avatar', 'pin'];
 
 export default function OnboardingScreen({ navigation }) {
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const [step, setStep] = useState(0);
   const [childName, setChildName] = useState('');
+  const [gender, setGender] = useState('boy');
   const [childAge, setChildAge] = useState(8);
-  const [avatarId, setAvatarId] = useState('hero');
+  const [avatarId, setAvatarId] = useState('superhero');
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const goNext = () => {
+    if (STEPS[step] === 'gender') {
+      setAvatarId(gender === 'boy' ? BOY_AVATARS[0] : GIRL_AVATARS[0]);
+    }
     Animated.sequence([
       Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -35,11 +37,13 @@ export default function OnboardingScreen({ navigation }) {
   const handleFinish = () => {
     if (pin.length !== 4) { setPinError('Code à 4 chiffres requis'); return; }
     if (pin !== pinConfirm) { setPinError('Les codes ne correspondent pas'); return; }
-    completeOnboarding(childName.trim(), childAge, avatarId, pin);
+    completeOnboarding(childName.trim(), childAge, avatarId, pin, gender);
     navigation.replace('Home');
   };
 
   const renderStep = () => {
+    const genderAvatars = gender === 'boy' ? BOY_AVATARS : GIRL_AVATARS;
+
     switch (STEPS[step]) {
       case 'name':
         return (
@@ -62,6 +66,36 @@ export default function OnboardingScreen({ navigation }) {
               onPress={goNext}
               disabled={!childName.trim()}
             >
+              <Text style={styles.btnText}>Continuer →</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'gender':
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.bigEmoji}>🌟</Text>
+            <Text style={styles.title}>{childName}, c'est…</Text>
+            <Text style={styles.sub}>Les héros disponibles seront différents !</Text>
+            <View style={styles.genderRow}>
+              <TouchableOpacity
+                style={[styles.genderCard, gender === 'boy' && styles.genderCardBoyOn]}
+                onPress={() => setGender('boy')}
+              >
+                <Text style={styles.genderEmoji}>👦</Text>
+                <Text style={[styles.genderLabel, gender === 'boy' && styles.genderLabelOn]}>Un garçon</Text>
+                {gender === 'boy' && <Text style={styles.genderCheck}>✓</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.genderCard, gender === 'girl' && styles.genderCardGirlOn]}
+                onPress={() => setGender('girl')}
+              >
+                <Text style={styles.genderEmoji}>👧</Text>
+                <Text style={[styles.genderLabel, gender === 'girl' && styles.genderLabelOn]}>Une fille</Text>
+                {gender === 'girl' && <Text style={styles.genderCheck}>✓</Text>}
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.btn} onPress={goNext}>
               <Text style={styles.btnText}>Continuer →</Text>
             </TouchableOpacity>
           </View>
@@ -94,10 +128,12 @@ export default function OnboardingScreen({ navigation }) {
       case 'avatar':
         return (
           <View style={styles.stepContent}>
-            <Text style={styles.title}>Choisis ton héros !</Text>
+            <Text style={styles.title}>
+              Choisis {gender === 'girl' ? 'ton héroïne' : 'ton héros'} !
+            </Text>
             <Text style={styles.sub}>{childName} part en aventure</Text>
             <View style={styles.avatarGrid}>
-              {AVATARS.map((id) => {
+              {genderAvatars.map((id) => {
                 const theme = AVATAR_THEMES[id];
                 return (
                   <TouchableOpacity
@@ -112,7 +148,9 @@ export default function OnboardingScreen({ navigation }) {
               })}
             </View>
             <TouchableOpacity style={styles.btn} onPress={goNext}>
-              <Text style={styles.btnText}>C'est ce héros ! →</Text>
+              <Text style={styles.btnText}>
+                C'est {gender === 'girl' ? 'cette héroïne' : 'ce héros'} ! →
+              </Text>
             </TouchableOpacity>
           </View>
         );
@@ -161,7 +199,6 @@ export default function OnboardingScreen({ navigation }) {
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            {/* Progress dots */}
             <View style={styles.dots}>
               {STEPS.map((_, i) => (
                 <View key={i} style={[styles.dot, i <= step ? styles.dotOn : null]} />
@@ -214,4 +251,17 @@ const styles = StyleSheet.create({
   },
   avatarLabel: { marginTop: 8, fontSize: 14, fontWeight: '700', color: COLORS.white },
   error: { color: '#FCA5A5', fontSize: 13, marginTop: 6, textAlign: 'center' },
+  // Gender
+  genderRow: { flexDirection: 'row', gap: 16, marginBottom: 8, width: '100%' },
+  genderCard: {
+    flex: 1, alignItems: 'center', padding: 24, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 3, borderColor: 'transparent', gap: 8,
+  },
+  genderCardBoyOn:  { borderColor: '#93C5FD', backgroundColor: 'rgba(59,130,246,0.25)' },
+  genderCardGirlOn: { borderColor: '#F9A8D4', backgroundColor: 'rgba(236,72,153,0.25)' },
+  genderEmoji: { fontSize: 52 },
+  genderLabel: { fontSize: 16, fontWeight: '800', color: 'rgba(255,255,255,0.8)' },
+  genderLabelOn: { color: COLORS.white },
+  genderCheck: { fontSize: 18, color: COLORS.white, fontWeight: '900' },
 });

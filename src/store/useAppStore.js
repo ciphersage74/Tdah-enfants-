@@ -10,6 +10,7 @@ const defaultState = {
   hasOnboarded: false,
   childName: '',
   childAge: 8,
+  gender: 'boy',
   avatarId: 'hero',
   coins: 20,
   xp: 0,
@@ -103,8 +104,8 @@ export const useAppStore = create((set, get) => ({
   },
 
   // ─── Onboarding ───────────────────────────────────────────────
-  completeOnboarding: (childName, childAge, avatarId, parentPin) => {
-    const next = { ...get(), hasOnboarded: true, childName, childAge, avatarId, parentPin };
+  completeOnboarding: (childName, childAge, avatarId, parentPin, gender = 'boy') => {
+    const next = { ...get(), hasOnboarded: true, childName, childAge, avatarId, parentPin, gender };
     set(next);
     save(next);
   },
@@ -239,6 +240,26 @@ export const useAppStore = create((set, get) => ({
     const next = { ...s, customTasks: { ...s.customTasks, [routineId]: tasks } };
     set(next);
     save(next);
+  },
+
+  addCustomTask: (routineId, task) => {
+    const s = get();
+    const current = s.customTasks?.[routineId] ?? [];
+    const newTask = { ...task, id: `custom_${Date.now()}` };
+    const next = { ...s, customTasks: { ...s.customTasks, [routineId]: [...current, newTask] } };
+    set(next);
+    save(next);
+  },
+
+  removeCustomTask: (routineId, taskId) => {
+    const s = get();
+    const current = s.customTasks?.[routineId] ?? [];
+    const updated = current.filter((t) => t.id !== taskId);
+    if (updated.length < 2) return false;
+    const next = { ...s, customTasks: { ...s.customTasks, [routineId]: updated } };
+    set(next);
+    save(next);
+    return true;
   },
 
   setParentMode: (v) => set({ isParentMode: v }),

@@ -5,6 +5,7 @@ export const useActiveProfile = () =>
   useAppStore((s) => ({
     childName: s.childName,
     childAge: s.childAge,
+    gender: s.gender,
     avatarId: s.avatarId,
     coins: s.coins,
     xp: s.xp,

@@ -10,12 +10,19 @@ import { useActiveProfile } from '../hooks/useActiveProfile';
 import { useNotifications } from '../hooks/useNotifications';
 import HeroAvatar from '../components/HeroAvatar';
 
+const TASK_EMOJIS = ['⭐', '🌟', '📝', '🎯', '💊', '🧹', '🛏️', '🎵', '📱', '🐕', '🌿', '🏃', '🍽️', '🧺', '👕', '🤝', '🎨', '📚', '🧴', '🌙'];
+const TASK_DURATIONS = [
+  { value: 60, label: '1 min' }, { value: 120, label: '2 min' },
+  { value: 300, label: '5 min' }, { value: 600, label: '10 min' },
+  { value: 900, label: '15 min' }, { value: 1800, label: '30 min' },
+];
+
 const TABS = ['📊 Stats', '⚙️ Config', '🔔 Notifs', '🎁 Récompenses', '⭐ Abonnement'];
 const DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
 export default function ParentDashboardScreen({ navigation }) {
   const {
-    isPremium, updateCustomTasks, setParentMode,
+    isPremium, updateCustomTasks, addCustomTask, removeCustomTask, setParentMode,
     getWeeklyStats, unlockPremium,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   } = useAppStore();
@@ -25,11 +32,29 @@ export default function ParentDashboardScreen({ navigation }) {
   const [notifSettings, setNotifSettings] = useState({
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   });
+  const [addingTask, setAddingTask] = useState(null);
+  const [newTaskEmoji, setNewTaskEmoji] = useState('⭐');
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskDuration, setNewTaskDuration] = useState(300);
 
   if (!profile) return null;
 
   const stats = getWeeklyStats();
   const handleClose = () => { setParentMode(false); navigation.navigate('Home'); };
+
+  const handleAddCustomTask = (routineId) => {
+    if (!newTaskName.trim()) return;
+    addCustomTask(routineId, { name: newTaskName.trim(), emoji: newTaskEmoji, duration: newTaskDuration, coins: 10, xp: 10 });
+    setAddingTask(null);
+    setNewTaskName('');
+  };
+
+  const handleDeleteCustomTask = (routineId, taskId) => {
+    Alert.alert('Supprimer ?', 'Supprimer cette tâche personnalisée ?', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: () => removeCustomTask(routineId, taskId) },
+    ]);
+  };
 
   const toggleTask = (routineId, taskId) => {
     const tasks = profile.customTasks?.[routineId] || ROUTINES[routineId].defaultTasks;
@@ -116,8 +141,11 @@ export default function ParentDashboardScreen({ navigation }) {
     <ScrollView showsVerticalScrollIndicator={false}>
       {Object.values(ROUTINES).map((routine) => {
         const locked = routine.premium && !isPremium;
-        const tasks = profile.customTasks?.[routine.id] || routine.defaultTasks;
-        const activeIds = new Set(tasks.map((t) => t.id));
+        const activeTasks = profile.customTasks?.[routine.id] || routine.defaultTasks;
+        const activeIds = new Set(activeTasks.map((t) => t.id));
+        const customTasksList = activeTasks.filter((t) => t.id.startsWith('custom_'));
+        const isAdding = addingTask === routine.id;
+
         return (
           <View key={routine.id} style={styles.card}>
             <View style={[styles.row, { marginBottom: 8 }]}>
@@ -128,18 +156,97 @@ export default function ParentDashboardScreen({ navigation }) {
             {locked ? (
               <Text style={styles.cardSub}>Débloquez Premium pour personnaliser</Text>
             ) : (
-              routine.defaultTasks.map((task) => (
-                <View key={task.id} style={styles.taskRow}>
-                  <Text style={styles.taskEmoji}>{task.emoji}</Text>
-                  <Text style={styles.taskName}>{task.name}</Text>
-                  <Switch
-                    value={activeIds.has(task.id)}
-                    onValueChange={() => toggleTask(routine.id, task.id)}
-                    trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-                    thumbColor={activeIds.has(task.id) ? COLORS.primary : '#fff'}
-                  />
-                </View>
-              ))
+              <>
+                {routine.defaultTasks.map((task) => (
+                  <View key={task.id} style={styles.taskRow}>
+                    <Text style={styles.taskEmoji}>{task.emoji}</Text>
+                    <Text style={styles.taskName}>{task.name}</Text>
+                    <Switch
+                      value={activeIds.has(task.id)}
+                      onValueChange={() => toggleTask(routine.id, task.id)}
+                      trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+                      thumbColor={activeIds.has(task.id) ? COLORS.primary : '#fff'}
+                    />
+                  </View>
+                ))}
+
+                {customTasksList.map((task) => (
+                  <View key={task.id} style={[styles.taskRow, styles.customTaskRow]}>
+                    <Text style={styles.taskEmoji}>{task.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.taskName, { color: COLORS.primary }]}>{task.name}</Text>
+                      <Text style={{ fontSize: 10, color: COLORS.textMuted }}>Personnalisée</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleDeleteCustomTask(routine.id, task.id)} style={styles.deleteBtn}>
+                      <Text style={{ fontSize: 16 }}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                {isAdding ? (
+                  <View style={styles.addTaskForm}>
+                    <Text style={[styles.cardSub, { marginBottom: 6 }]}>Choisir un emoji :</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={{ flexDirection: 'row', gap: 6, paddingBottom: 4 }}>
+                        {TASK_EMOJIS.map((e) => (
+                          <TouchableOpacity
+                            key={e}
+                            style={[styles.emojiPill, newTaskEmoji === e && styles.emojiPillOn]}
+                            onPress={() => setNewTaskEmoji(e)}
+                          >
+                            <Text style={{ fontSize: 20 }}>{e}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </ScrollView>
+                    <TextInput
+                      style={styles.addTaskInput}
+                      placeholder="Nom de la tâche…"
+                      placeholderTextColor={COLORS.textMuted}
+                      value={newTaskName}
+                      onChangeText={setNewTaskName}
+                      maxLength={30}
+                      autoFocus
+                    />
+                    <Text style={[styles.cardSub, { marginBottom: 6 }]}>Durée estimée :</Text>
+                    <View style={styles.durationRow}>
+                      {TASK_DURATIONS.map((d) => (
+                        <TouchableOpacity
+                          key={d.value}
+                          style={[styles.durationPill, newTaskDuration === d.value && styles.durationPillOn]}
+                          onPress={() => setNewTaskDuration(d.value)}
+                        >
+                          <Text style={[styles.durationText, newTaskDuration === d.value && styles.durationTextOn]}>
+                            {d.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <View style={styles.addFormBtns}>
+                      <TouchableOpacity
+                        style={styles.cancelBtn}
+                        onPress={() => { setAddingTask(null); setNewTaskName(''); }}
+                      >
+                        <Text style={styles.cancelBtnText}>Annuler</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.confirmBtn, !newTaskName.trim() && { opacity: 0.4 }]}
+                        onPress={() => handleAddCustomTask(routine.id)}
+                        disabled={!newTaskName.trim()}
+                      >
+                        <Text style={styles.confirmBtnText}>Ajouter ✓</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.addTaskBtn}
+                    onPress={() => { setAddingTask(routine.id); setNewTaskEmoji('⭐'); setNewTaskName(''); setNewTaskDuration(300); }}
+                  >
+                    <Text style={styles.addTaskBtnText}>+ Ajouter une tâche</Text>
+                  </TouchableOpacity>
+                )}
+              </>
             )}
           </View>
         );
@@ -369,4 +476,37 @@ const styles = StyleSheet.create({
   premiumCtaText: { fontSize: 17, fontWeight: '900', color: COLORS.white },
   featureItem: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
   featureText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
+  customTaskRow: { backgroundColor: '#F5F3FF', borderRadius: 8, marginHorizontal: -4, paddingHorizontal: 4 },
+  deleteBtn: { padding: 4 },
+  addTaskBtn: {
+    marginTop: 10, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.primary,
+    borderStyle: 'dashed', padding: 10, alignItems: 'center',
+  },
+  addTaskBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
+  addTaskForm: { marginTop: 12, gap: 10 },
+  emojiPill: {
+    padding: 6, borderRadius: 8, borderWidth: 1.5, borderColor: 'transparent',
+    backgroundColor: COLORS.background,
+  },
+  emojiPillOn: { borderColor: COLORS.primary, backgroundColor: COLORS.surface },
+  addTaskInput: {
+    backgroundColor: COLORS.background, borderRadius: 10, padding: 12,
+    fontSize: 15, color: COLORS.textPrimary, borderWidth: 1, borderColor: COLORS.border,
+  },
+  durationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  durationPill: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  durationPillOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  durationText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  durationTextOn: { color: COLORS.white },
+  addFormBtns: { flexDirection: 'row', gap: 8 },
+  cancelBtn: {
+    flex: 1, padding: 10, borderRadius: 10, borderWidth: 1,
+    borderColor: COLORS.border, alignItems: 'center',
+  },
+  cancelBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  confirmBtn: { flex: 2, padding: 10, borderRadius: 10, backgroundColor: COLORS.primary, alignItems: 'center' },
+  confirmBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.white },
 });
