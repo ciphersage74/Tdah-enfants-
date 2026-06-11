@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FocusHéros — Aperçu des écrans</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px 20px; min-height: 100vh; }
+
+  h1 { color: #fff; text-align: center; font-size: 28px; margin-bottom: 8px; font-weight: 900; }
+  .subtitle { color: rgba(255,255,255,0.5); text-align: center; font-size: 14px; margin-bottom: 48px; }
+
+  .screens-row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+
+  .screen-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .screen-label { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    height: 780px;
+    background: #fff;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.1), inset 0 0 0 2px rgba(0,0,0,0.4);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* Notch */
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 32px;
+    background: #000;
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+  }
+
+  .screen { width: 100%; height: 100%; overflow: hidden; position: relative; }
+
+  /* ═══════════════════════════════════════════════ HOME SCREEN */
+  .home { background: #F5F3FF; padding: 48px 16px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+  .header-card {
+    background: white; border-radius: 20px; padding: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 12px;
+  }
+  .header-row { display: flex; align-items: center; gap: 12px; }
+  .avatar-circle {
+    width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; flex-shrink: 0; position: relative;
+  }
+  .avatar-top { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); font-size: 18px; }
+  .avatar-right { position: absolute; right: -4px; bottom: 4px; font-size: 16px; }
+  .hero-info { flex: 1; }
+  .greeting { font-size: 11px; color: #6B7280; }
+  .hero-name { font-size: 20px; font-weight: 900; color: #1E1B4B; margin-top: 1px; }
+  .coin-badge {
+    background: rgba(255,184,0,0.15); border: 1px solid #FFB800; border-radius: 20px;
+    padding: 4px 10px; display: flex; align-items: center; gap: 4px; height: fit-content;
+  }
+  .coin-badge span { font-size: 14px; font-weight: 800; color: #D97706; }
+
+  .xp-bar-wrap { }
+  .xp-labels { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .xp-level { font-size: 11px; font-weight: 800; color: #6C3AE8; }
+  .xp-pts { font-size: 10px; color: #9CA3AF; }
+  .xp-track { height: 7px; background: #EDE9FE; border-radius: 4px; overflow: hidden; }
+  .xp-fill { height: 100%; background: #6C3AE8; border-radius: 4px; }
+
+  .streak-badge { background: #FEF3C7; border-radius: 10px; padding: 5px 12px; align-self: flex-start; }
+  .streak-badge span { font-size: 12px; font-weight: 700; color: #B45309; }
+
+  .action-row { display: flex; gap: 10px; }
+  .action-btn {
+    flex: 1; background: white; border-radius: 14px; padding: 10px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06); position: relative;
+    border: 2px solid transparent;
+  }
+  .action-btn.ready { border-color: #FFB800; background: #FFFBEB; }
+  .action-emoji { font-size: 22px; }
+  .action-label { font-size: 10px; font-weight: 700; color: #6B7280; }
+  .action-label.gold { color: #B45309; }
+  .action-dot {
+    position: absolute; top: 5px; right: 5px; width: 14px; height: 14px; border-radius: 7px;
+    background: #6C3AE8; display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: white; font-weight: 900;
+  }
+  .action-dot.gold { background: #FFB800; }
+
+  .today-label { font-size: 11px; font-weight: 700; color: #9CA3AF; padding: 0 2px; }
+
+  .routine-card {
+    border-radius: 20px; padding: 18px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15); position: relative; overflow: hidden;
+  }
+  .routine-morning { background: linear-gradient(135deg, #F97316, #FBBF24); }
+  .routine-evening { background: linear-gradient(135deg, #3B82F6, #6366F1); }
+  .routine-locked { background: linear-gradient(135deg, #9CA3AF, #6B7280); }
+  .rc-header { display: flex; align-items: center; gap: 12px; }
+  .rc-emoji { font-size: 34px; }
+  .rc-info { flex: 1; }
+  .rc-name { font-size: 17px; font-weight: 900; color: white; margin-bottom: 3px; }
+  .rc-sub { font-size: 12px; color: rgba(255,255,255,0.8); }
+  .rc-play {
+    width: 38px; height: 38px; border-radius: 19px;
+    background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: white;
+  }
+  .rc-progress { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .rc-track { flex: 1; height: 5px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden; }
+  .rc-fill { height: 100%; background: white; border-radius: 3px; }
+  .rc-count { font-size: 11px; color: white; font-weight: 700; }
+  .rc-done { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 2px 8px; align-self: flex-start; }
+  .rc-done span { font-size: 11px; color: white; font-weight: 700; }
+  .lock-pill { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 2px 8px; align-self: flex-start; }
+  .lock-pill span { font-size: 11px; color: white; }
+
+  .status-box { background: #EDE9FE; border-radius: 14px; padding: 14px; }
+  .status-text { font-size: 13px; color: #6C3AE8; font-weight: 600; line-height: 1.4; }
+
+  .parent-btn {
+    margin-top: auto; padding: 13px; border-radius: 12px;
+    background: white; border: 1px solid #E5E7EB; text-align: center;
+  }
+  .parent-btn span { font-size: 13px; font-weight: 600; color: #9CA3AF; }
+
+  /* ═══════════════════════════════════════════════ QUEST SCREEN */
+  .quest { display: flex; flex-direction: column; height: 100%; }
+  .quest-gradient { background: linear-gradient(160deg, #F97316, #FBBF24); flex: 1; display: flex; flex-direction: column; padding-top: 44px; }
+  .quest-topbar { display: flex; align-items: center; gap: 10px; padding: 8px 16px 12px; }
+  .close-btn {
+    width: 32px; height: 32px; border-radius: 16px;
+    background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: white; font-weight: 700; flex-shrink: 0;
+  }
+  .prog-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .prog-track { height: 6px; background: rgba(255,255,255,0.25); border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; background: white; border-radius: 3px; }
+  .prog-label { font-size: 10px; color: rgba(255,255,255,0.85); font-weight: 700; text-align: right; }
+  .coin-chip { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 5px 10px; }
+  .coin-chip span { font-size: 12px; color: white; font-weight: 800; }
+
+  .quest-task { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .task-emoji { font-size: 96px; margin-bottom: 20px; }
+  .task-name { font-size: 28px; font-weight: 900; color: white; text-align: center; line-height: 1.2; margin-bottom: 28px; }
+
+  .timer-block { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .timer-display { font-size: 52px; font-weight: 900; color: white; font-variant-numeric: tabular-nums; }
+  .timer-track { width: 100%; height: 8px; background: rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; }
+  .timer-fill { height: 100%; background: white; border-radius: 4px; }
+
+  .quest-actions { padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .running-coins { text-align: center; font-size: 12px; color: rgba(255,255,255,0.85); font-weight: 600; }
+  .done-btn {
+    background: white; border-radius: 18px; padding: 18px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+  .done-btn span { font-size: 17px; font-weight: 900; color: #6C3AE8; letter-spacing: 0.5px; }
+  .skip-btn { text-align: center; padding: 8px; }
+  .skip-btn span { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+  /* ═══════════════════════════════════════════════ CELEBRATION */
+  .celebration { background: linear-gradient(160deg, #6C3AE8, #EC4899); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 60px 24px 28px; height: 100%; position: relative; overflow: hidden; }
+
+  .confetti-piece {
+    position: absolute; border-radius: 2px; opacity: 0.8;
+  }
+
+  .celeb-content { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .celeb-bravo { font-size: 42px; font-weight: 900; color: white; }
+  .celeb-avatar { width: 100px; height: 100px; border-radius: 50px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 48px; border: 4px solid rgba(255,255,255,0.5); }
+  .celeb-name { font-size: 26px; font-weight: 900; color: white; margin-top: 6px; }
+  .celeb-sub { font-size: 15px; color: rgba(255,255,255,0.8); font-weight: 600; }
+  .celeb-coins { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .celeb-coin-emoji { font-size: 28px; }
+  .celeb-coin-val { font-size: 52px; font-weight: 900; color: #FFD700; }
+  .celeb-coin-label { font-size: 15px; color: white; font-weight: 600; }
+  .levelup-box { background: #FFB800; border-radius: 14px; padding: 10px 24px; margin-top: 4px; }
+  .levelup-text { font-size: 20px; font-weight: 900; color: white; }
+  .badge-box { background: rgba(255,255,255,0.15); border-radius: 14px; padding: 14px; width: 100%; }
+  .badge-box-title { font-size: 13px; font-weight: 800; color: white; text-align: center; margin-bottom: 8px; }
+  .badge-pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .badge-pill { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 5px 12px; display: flex; align-items: center; gap: 5px; }
+  .badge-pill span { font-size: 12px; color: white; font-weight: 700; }
+
+  .celeb-continue {
+    background: white; border-radius: 18px; padding: 18px; width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+  .celeb-continue span { font-size: 17px; font-weight: 900; color: #6C3AE8; }
+
+  /* ═══════════════════════════════════════════════ SHOP SCREEN */
+  .shop { background: #F5F3FF; padding: 44px 0 0; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+  .shop-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .back-btn { width: 34px; height: 34px; border-radius: 10px; background: white; border: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #1E1B4B; flex-shrink: 0; }
+  .shop-title { flex: 1; font-size: 22px; font-weight: 900; color: #1E1B4B; }
+  .shop-coins { background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 20px; padding: 7px 14px; }
+  .shop-coins span { font-size: 14px; font-weight: 800; color: #B45309; }
+
+  .shop-preview { background: white; margin: 0 16px; border-radius: 18px; padding: 14px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 12px; }
+  .preview-avatar { width: 88px; height: 88px; border-radius: 44px; background: #EDE9FE; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 3px solid #6C3AE8; position: relative; }
+  .preview-info { flex: 1; }
+  .preview-name { font-size: 17px; font-weight: 900; color: #1E1B4B; }
+  .preview-level { font-size: 12px; color: #6B7280; margin-top: 2px; }
+  .collection-pill { background: #EDE9FE; border-radius: 10px; padding: 3px 10px; display: inline-block; margin-top: 4px; }
+  .collection-pill span { font-size: 11px; font-weight: 800; color: #6C3AE8; }
+
+  .cat-row { display: flex; gap: 8px; padding: 0 16px; overflow-x: auto; margin-bottom: 10px; }
+  .cat-row::-webkit-scrollbar { display: none; }
+  .cat-tab { display: flex; flex-direction: column; align-items: center; padding: 8px 14px; background: white; border-radius: 14px; border: 2px solid #E5E7EB; min-width: 72px; }
+  .cat-tab.active { border-color: #6C3AE8; background: #EDE9FE; }
+  .cat-tab-emoji { font-size: 18px; }
+  .cat-tab-label { font-size: 10px; font-weight: 800; color: #6B7280; margin-top: 2px; }
+  .cat-tab.active .cat-tab-label { color: #6C3AE8; }
+  .cat-tab-count { font-size: 9px; color: #9CA3AF; }
+
+  .shop-grid { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 16px; overflow-y: auto; flex: 1; }
+  .shop-item {
+    width: calc(33.33% - 7px); background: white; border-radius: 14px; padding: 10px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    border: 2px solid transparent; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    min-height: 105px; justify-content: space-between;
+  }
+  .shop-item.equipped { border-color: #6C3AE8; background: #EDE9FE; }
+  .shop-item.locked { background: #F5F3FF; box-shadow: none; }
+  .item-emoji { font-size: 28px; }
+  .item-name { font-size: 10px; font-weight: 800; color: #1E1B4B; text-align: center; line-height: 1.3; }
+  .item-name.muted { color: #9CA3AF; }
+  .buy-btn { background: #6C3AE8; border-radius: 8px; padding: 4px 0; width: 100%; text-align: center; }
+  .buy-btn span { font-size: 10px; font-weight: 800; color: white; }
+  .buy-btn.cant { background: #E5E7EB; }
+  .buy-btn.cant span { color: #9CA3AF; }
+  .equip-btn { background: #10B981; border-radius: 8px; padding: 4px 0; width: 100%; text-align: center; }
+  .equip-btn span { font-size: 10px; font-weight: 700; color: white; }
+  .unequip-btn { background: #8B5CF6; border-radius: 8px; padding: 4px 0; width: 100%; text-align: center; }
+  .level-pill { background: #E5E7EB; border-radius: 6px; padding: 2px 6px; }
+  .level-pill span { font-size: 9px; font-weight: 700; color: #9CA3AF; }
+  .equipped-dot { width: 7px; height: 7px; background: #6C3AE8; border-radius: 50%; position: absolute; top: 6px; right: 6px; }
+
+  /* ═══════════════════════════════════════════════ REWARDS SCREEN */
+  .rewards-bg { background: #F5F3FF; display: flex; flex-direction: column; height: 100%; padding-top: 44px; overflow: hidden; }
+  .rewards-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .rewards-title { flex: 1; }
+  .rewards-title h2 { font-size: 20px; font-weight: 900; color: #1E1B4B; }
+  .rewards-title p { font-size: 12px; color: #6B7280; font-weight: 600; margin-top: 1px; }
+  .rewards-content { flex: 1; overflow-y: auto; padding: 8px 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+
+  .section-lbl { font-size: 12px; font-weight: 800; color: #6B7280; margin-top: 4px; }
+
+  .reward-card {
+    background: white; border-radius: 18px; padding: 14px;
+    border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden;
+  }
+  .reward-card.ready { border-color: #FFB800; box-shadow: 0 4px 20px rgba(255,184,0,0.25); }
+  .ready-ribbon { position: absolute; top: 0; right: 0; background: #FFB800; padding: 3px 12px; border-bottom-left-radius: 12px; }
+  .ready-ribbon span { font-size: 10px; font-weight: 900; color: white; }
+  .reward-top { display: flex; align-items: center; gap: 12px; }
+  .r-emoji-circle { width: 50px; height: 50px; border-radius: 25px; background: #EDE9FE; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .r-emoji-circle.gold { background: #FEF3C7; }
+  .r-info { flex: 1; }
+  .r-name { font-size: 15px; font-weight: 800; color: #1E1B4B; }
+  .r-cost { font-size: 12px; color: #6B7280; font-weight: 600; margin-top: 2px; }
+  .prog-row { display: flex; flex-direction: column; gap: 4px; }
+  .r-track { height: 9px; background: #EDE9FE; border-radius: 5px; overflow: hidden; }
+  .r-fill { height: 100%; background: #6C3AE8; border-radius: 5px; }
+  .r-fill.gold { background: #FFB800; }
+  .r-label { font-size: 11px; color: #6B7280; font-weight: 600; text-align: right; }
+  .r-label.gold { color: #B45309; font-weight: 800; }
+  .claim-btn { border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #F97316, #FBBF24); }
+  .claim-btn span { font-size: 13px; font-weight: 900; color: white; }
+
+  .reward-card.claimed { background: #D1FAE5; border-color: #10B981; }
+  .claimed-label { font-size: 12px; color: #059669; font-weight: 800; }
+
+</style>
+</head>
+<body>
+
+<h1>🦸 FocusHéros</h1>
+<p class="subtitle">Aperçu des 5 écrans principaux</p>
+
+<div class="screens-row">
+
+  <!-- ═══ HOME SCREEN ═══ -->
+  <div class="screen-wrap">
+    <div class="screen-label">Accueil</div>
+    <div class="phone">
+      <div class="screen home">
+
+        <div class="header-card">
+          <div class="header-row">
+            <div class="avatar-circle" style="background:#EDE9FE; border: 3px solid #6C3AE8;">
+              🦸
+              <div class="avatar-top">👑</div>
+              <div class="avatar-right">⚔️</div>
+            </div>
+            <div class="hero-info">
+              <div class="greeting">Bonjour !</div>
+              <div class="hero-name">Léo</div>
+            </div>
+            <div class="coin-badge"><span>🪙 340</span></div>
+          </div>
+          <div class="xp-bar-wrap">
+            <div class="xp-labels">
+              <span class="xp-level">Niv. 3</span>
+              <span class="xp-pts">340 / 450 XP</span>
+            </div>
+            <div class="xp-track"><div class="xp-fill" style="width:75%"></div></div>
+          </div>
+          <div class="streak-badge"><span>🔥 7 jours de suite !</span></div>
+        </div>
+
+        <div class="action-row">
+          <div class="action-btn">
+            <span class="action-emoji">🏆</span>
+            <span class="action-label">Badges</span>
+            <div class="action-dot">5</div>
+          </div>
+          <div class="action-btn">
+            <span class="action-emoji">🛍️</span>
+            <span class="action-label">Boutique</span>
+            <div class="action-dot">3</div>
+          </div>
+          <div class="action-btn ready">
+            <span class="action-emoji">🎁</span>
+            <span class="action-label gold">RÉCLAMER !</span>
+            <div class="action-dot gold">1</div>
+          </div>
+        </div>
+
+        <div class="today-label">Aujourd'hui — Mer 11 juin</div>
+
+        <div class="routine-card routine-morning">
+          <div class="rc-header">
+            <div class="rc-emoji">☀️</div>
+            <div class="rc-info">
+              <div class="rc-name">Quête du Matin</div>
+              <div class="rc-done"><span>✅ Terminée !</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="routine-card routine-evening">
+          <div class="rc-header">
+            <div class="rc-emoji">🌙</div>
+            <div class="rc-info">
+              <div class="rc-name">Quête du Soir</div>
+              <div class="rc-sub">8 missions</div>
+            </div>
+            <div class="rc-play">▶</div>
+          </div>
+          <div class="rc-progress">
+            <div class="rc-track"><div class="rc-fill" style="width:0%"></div></div>
+            <span class="rc-count">0/8</span>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <span class="status-text">🌟  Super ce matin ! La quête du soir t'attend.</span>
+        </div>
+
+        <div class="parent-btn"><span>Mode Parent</span></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ QUEST SCREEN ═══ -->
+  <div class="screen-wrap">
+    <div class="screen-label">Quête active</div>
+    <div class="phone">
+      <div class="screen quest">
+        <div class="quest-gradient">
+          <div class="quest-topbar">
+            <div class="close-btn">✕</div>
+            <div class="prog-wrap">
+              <div class="prog-track"><div class="prog-fill" style="width:40%"></div></div>
+              <div class="prog-label">2 / 5</div>
+            </div>
+            <div class="coin-chip"><span>🪙 +15</span></div>
+          </div>
+
+          <div class="quest-task">
+            <div class="task-emoji">👕</div>
+            <div class="task-name">Je m'habille</div>
+            <div class="timer-block">
+              <div class="timer-display">2:34</div>
+              <div class="timer-track"><div class="timer-fill" style="width:51%"></div></div>
+            </div>
+          </div>
+
+          <div class="quest-actions">
+            <div class="running-coins">🪙 23 pièces gagnées</div>
+            <div class="done-btn"><span>MISSION ACCOMPLIE ✓</span></div>
+            <div class="skip-btn"><span>Passer cette tâche</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CELEBRATION ═══ -->
+  <div class="screen-wrap">
+    <div class="screen-label">Célébration</div>
+    <div class="phone">
+      <div class="screen celebration">
+        <!-- Confetti -->
+        <div class="confetti-piece" style="width:10px;height:10px;background:#FFD700;top:80px;left:40px;transform:rotate(30deg)"></div>
+        <div class="confetti-piece" style="width:8px;height:8px;background:#FF6B6B;top:100px;right:50px;border-radius:50%"></div>
+        <div class="confetti-piece" style="width:12px;height:6px;background:#4ECDC4;top:130px;left:80px;transform:rotate(-20deg)"></div>
+        <div class="confetti-piece" style="width:9px;height:9px;background:#C084FC;top:150px;right:80px;transform:rotate(45deg)"></div>
+        <div class="confetti-piece" style="width:7px;height:11px;background:#FBBF24;top:170px;left:160px;transform:rotate(15deg)"></div>
+        <div class="confetti-piece" style="width:10px;height:7px;background:#F472B6;top:200px;left:30px;transform:rotate(-40deg)"></div>
+        <div class="confetti-piece" style="width:8px;height:8px;background:#34D399;top:90px;left:200px;border-radius:50%"></div>
+        <div class="confetti-piece" style="width:11px;height:5px;background:#60A5FA;top:120px;right:30px;transform:rotate(20deg)"></div>
+
+        <div class="celeb-content">
+          <div class="celeb-bravo">BRAVO !</div>
+          <div class="celeb-avatar">🦸</div>
+          <div class="celeb-name">Léo</div>
+          <div class="celeb-sub">Quête du Matin accomplie !</div>
+          <div class="celeb-coins">
+            <span class="celeb-coin-emoji">🪙</span>
+            <span class="celeb-coin-val">+98</span>
+            <span class="celeb-coin-label">pièces</span>
+          </div>
+          <div class="levelup-box"><span class="levelup-text">⭐  NIVEAU 4 !</span></div>
+          <div class="badge-box">
+            <div class="badge-box-title">Badges débloqués !</div>
+            <div class="badge-pills">
+              <div class="badge-pill"><span>🔥🔥</span><span>Flamme x7</span></div>
+              <div class="badge-pill"><span>🎯</span><span>Régulier</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="celeb-continue"><span>Continuer →</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SHOP SCREEN ═══ -->
+  <div class="screen-wrap">
+    <div class="screen-label">Boutique</div>
+    <div class="phone">
+      <div class="screen shop">
+        <div class="shop-header">
+          <div class="back-btn">←</div>
+          <span class="shop-title">Boutique</span>
+          <div class="shop-coins"><span>🪙 340</span></div>
+        </div>
+
+        <div class="shop-preview">
+          <div class="preview-avatar" style="position:relative">
+            🦸
+            <span style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:20px">👑</span>
+            <span style="position:absolute;right:-4px;bottom:4px;font-size:16px">⚔️</span>
+          </div>
+          <div class="preview-info">
+            <div class="preview-name">Léo</div>
+            <div class="preview-level">Niveau 3</div>
+            <div class="collection-pill"><span>3/35 accessoires</span></div>
+          </div>
+        </div>
+
+        <div class="cat-row">
+          <div class="cat-tab active"><span class="cat-tab-emoji">🎩</span><span class="cat-tab-label">Chapeaux</span><span class="cat-tab-count">2/9</span></div>
+          <div class="cat-tab"><span class="cat-tab-emoji">⚔️</span><span class="cat-tab-label">Armes</span><span class="cat-tab-count">1/8</span></div>
+          <div class="cat-tab"><span class="cat-tab-emoji">✨</span><span class="cat-tab-label">Magie</span><span class="cat-tab-count">0/9</span></div>
+          <div class="cat-tab"><span class="cat-tab-emoji">🐉</span><span class="cat-tab-label">Compagnons</span><span class="cat-tab-count">0/10</span></div>
+        </div>
+
+        <div class="shop-grid">
+          <div class="shop-item" style="position:relative">
+            <span class="item-emoji">🎉</span>
+            <span class="item-name">Chapeau fête</span>
+            <div class="equip-btn"><span>Équiper</span></div>
+          </div>
+          <div class="shop-item equipped" style="position:relative">
+            <div class="equipped-dot"></div>
+            <span class="item-emoji">👑</span>
+            <span class="item-name">Couronne</span>
+            <div class="unequip-btn"><span>✓ Équipé</span></div>
+          </div>
+          <div class="shop-item" style="position:relative">
+            <span class="item-emoji">🤠</span>
+            <span class="item-name">Cowboy</span>
+            <div class="buy-btn"><span>60 🪙</span></div>
+          </div>
+          <div class="shop-item" style="position:relative">
+            <span class="item-emoji">🎩</span>
+            <span class="item-name">Haut-de-forme</span>
+            <div class="buy-btn"><span>70 🪙</span></div>
+          </div>
+          <div class="shop-item" style="position:relative">
+            <span class="item-emoji">🎓</span>
+            <span class="item-name">Toque diplômé</span>
+            <div class="buy-btn"><span>100 🪙</span></div>
+          </div>
+          <div class="shop-item locked" style="position:relative">
+            <span class="item-emoji" style="opacity:0.2">⛑️</span>
+            <span class="item-name muted">Casque guerrier</span>
+            <div class="level-pill"><span>Niv. 3</span></div>
+          </div>
+          <div class="shop-item locked">
+            <span class="item-emoji" style="opacity:0.2">🧙</span>
+            <span class="item-name muted">Chapeau sorcière</span>
+            <div class="level-pill"><span>Niv. 4</span></div>
+          </div>
+          <div class="shop-item locked">
+            <span class="item-emoji" style="opacity:0.2">💍</span>
+            <span class="item-name muted">Tiare princesse</span>
+            <div class="level-pill"><span>Niv. 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REWARDS SCREEN ═══ -->
+  <div class="screen-wrap">
+    <div class="screen-label">Récompenses</div>
+    <div class="phone">
+      <div class="screen rewards-bg">
+        <div class="rewards-header">
+          <div class="back-btn">←</div>
+          <div class="rewards-title">
+            <h2>Mes récompenses</h2>
+            <p>🪙 340 pièces disponibles</p>
+          </div>
+        </div>
+
+        <div class="rewards-content">
+
+          <div class="section-lbl">🟢 Prête à réclamer</div>
+          <div class="reward-card ready">
+            <div class="ready-ribbon"><span>PRÊT !</span></div>
+            <div class="reward-top">
+              <div class="r-emoji-circle gold">🎬</div>
+              <div class="r-info">
+                <div class="r-name">Cinéma</div>
+                <div class="r-cost">300 🪙 atteint !</div>
+              </div>
+            </div>
+            <div class="prog-row">
+              <div class="r-track"><div class="r-fill gold" style="width:100%"></div></div>
+              <div class="r-label gold">340 / 300</div>
+            </div>
+            <div class="claim-btn"><span>🎉  RÉCLAMER MA RÉCOMPENSE</span></div>
+          </div>
+
+          <div class="section-lbl">⏳ En cours</div>
+          <div class="reward-card">
+            <div class="reward-top">
+              <div class="r-emoji-circle">🎮</div>
+              <div class="r-info">
+                <div class="r-name">Jeu vidéo</div>
+                <div class="r-cost">400 🪙 nécessaires</div>
+              </div>
+            </div>
+            <div class="prog-row">
+              <div class="r-track"><div class="r-fill" style="width:85%"></div></div>
+              <div class="r-label">Plus que 60 🪙</div>
+            </div>
+          </div>
+
+          <div class="reward-card">
+            <div class="reward-top">
+              <div class="r-emoji-circle">🎡</div>
+              <div class="r-info">
+                <div class="r-name">Parc d'attraction</div>
+                <div class="r-cost">600 🪙 nécessaires</div>
+              </div>
+            </div>
+            <div class="prog-row">
+              <div class="r-track"><div class="r-fill" style="width:57%"></div></div>
+              <div class="r-label">Plus que 260 🪙</div>
+            </div>
+          </div>
+
+          <div class="section-lbl">✅ Réclamées</div>
+          <div class="reward-card claimed">
+            <div class="reward-top">
+              <div class="r-emoji-circle" style="background:#D1FAE5">🍕</div>
+              <div class="r-info">
+                <div class="r-name">Pizza</div>
+                <div class="claimed-label">✅ Réclamée — montre à tes parents !</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
