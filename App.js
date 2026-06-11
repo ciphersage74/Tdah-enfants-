@@ -5,16 +5,32 @@ import { StatusBar } from 'expo-status-bar';
 import { useAppStore } from './src/store/useAppStore';
 import AppNavigator from './src/navigation/AppNavigator';
 import { COLORS } from './src/constants/colors';
+import { useNotifications } from './src/hooks/useNotifications';
 
-export default function App() {
+function Root() {
   const [ready, setReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState('Onboarding');
   const loadState = useAppStore((s) => s.loadState);
-  const hasOnboarded = useAppStore((s) => s.hasOnboarded);
+  const { requestPermissions, applySchedule } = useNotifications();
 
   useEffect(() => {
-    loadState().then(() => {
-      setInitialRoute(useAppStore.getState().hasOnboarded ? 'Home' : 'Onboarding');
+    loadState().then(async () => {
+      const state = useAppStore.getState();
+      const { hasOnboarded, profiles } = state;
+
+      if (!hasOnboarded || profiles.length === 0) {
+        setInitialRoute('Onboarding');
+      } else if (profiles.length > 1) {
+        setInitialRoute('ProfileSelect');
+      } else {
+        setInitialRoute('Home');
+      }
+
+      if (hasOnboarded) {
+        const granted = await requestPermissions();
+        if (granted) await applySchedule();
+      }
+
       setReady(true);
     });
   }, []);
@@ -27,10 +43,14 @@ export default function App() {
     );
   }
 
+  return <AppNavigator initialRoute={initialRoute} />;
+}
+
+export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="auto" />
-      <AppNavigator initialRoute={initialRoute} />
+      <Root />
     </GestureHandlerRootView>
   );
 }

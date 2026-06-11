@@ -9,12 +9,13 @@ import { COLORS, AVATAR_THEMES, GRADIENTS } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
 import HeroAvatar from '../components/HeroAvatar';
 
-const STEPS = ['name', 'age', 'avatar', 'pin'];
-
 const AVATARS = Object.keys(AVATAR_THEMES);
+const AVATAR_LABELS = { dragon: 'Dragon', hero: 'Héros', wizard: 'Sorcier', fox: 'Renard' };
 
-export default function OnboardingScreen() {
-  const completeOnboarding = useAppStore((s) => s.completeOnboarding);
+export default function OnboardingScreen({ navigation, route }) {
+  const isAdd = route.params?.mode === 'add';
+  const { addProfile } = useAppStore();
+
   const [step, setStep] = useState(0);
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState(8);
@@ -23,20 +24,30 @@ export default function OnboardingScreen() {
   const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
 
+  const STEPS = isAdd ? ['name', 'age', 'avatar'] : ['name', 'age', 'avatar', 'pin'];
+  const totalSteps = STEPS.length;
+
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const goNext = () => {
     Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
     setStep((s) => s + 1);
   };
 
   const handleFinish = () => {
-    if (pin.length !== 4) { setPinError('Le code doit avoir 4 chiffres'); return; }
-    if (pin !== pinConfirm) { setPinError('Les codes ne correspondent pas'); return; }
-    completeOnboarding(childName.trim(), childAge, avatarId, pin);
+    if (!isAdd) {
+      if (pin.length !== 4) { setPinError('Code à 4 chiffres requis'); return; }
+      if (pin !== pinConfirm) { setPinError('Les codes ne correspondent pas'); return; }
+    }
+    addProfile(childName.trim(), childAge, avatarId);
+    if (isAdd) {
+      navigation.replace('Home');
+    } else {
+      navigation.replace('Home');
+    }
   };
 
   const renderStep = () => {
@@ -45,23 +56,23 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.stepContent}>
             <Text style={styles.bigEmoji}>👋</Text>
-            <Text style={styles.title}>Bienvenue !</Text>
-            <Text style={styles.subtitle}>Comment s'appelle ton héros ?</Text>
+            <Text style={styles.title}>{isAdd ? 'Nouveau héros' : 'Bienvenue !'}</Text>
+            <Text style={styles.sub}>Comment s'appelle le héros ?</Text>
             <TextInput
               style={styles.input}
-              placeholder="Prénom de l'enfant"
-              placeholderTextColor={COLORS.textMuted}
+              placeholder="Prénom"
+              placeholderTextColor="rgba(255,255,255,0.5)"
               value={childName}
               onChangeText={setChildName}
               autoFocus
               maxLength={20}
             />
             <TouchableOpacity
-              style={[styles.btn, !childName.trim() && styles.btnDisabled]}
+              style={[styles.btn, !childName.trim() && styles.btnOff]}
               onPress={goNext}
               disabled={!childName.trim()}
             >
-              <Text style={styles.btnText}>Continuer →</Text>
+              <Text style={styles.btnText}>Continuer</Text>
             </TouchableOpacity>
           </View>
         );
@@ -75,17 +86,17 @@ export default function OnboardingScreen() {
               {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((age) => (
                 <TouchableOpacity
                   key={age}
-                  style={[styles.agePill, childAge === age && styles.agePillSelected]}
+                  style={[styles.agePill, childAge === age && styles.agePillOn]}
                   onPress={() => setChildAge(age)}
                 >
-                  <Text style={[styles.agePillText, childAge === age && styles.agePillTextSelected]}>
-                    {age} ans
+                  <Text style={[styles.agePillText, childAge === age && styles.agePillTextOn]}>
+                    {age}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
             <TouchableOpacity style={styles.btn} onPress={goNext}>
-              <Text style={styles.btnText}>Continuer →</Text>
+              <Text style={styles.btnText}>Continuer</Text>
             </TouchableOpacity>
           </View>
         );
@@ -94,26 +105,24 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.stepContent}>
             <Text style={styles.title}>Choisis ton héros !</Text>
-            <Text style={styles.subtitle}>{childName} va partir en aventure</Text>
+            <Text style={styles.sub}>{childName} part en aventure</Text>
             <View style={styles.avatarGrid}>
               {AVATARS.map((id) => {
                 const theme = AVATAR_THEMES[id];
                 return (
                   <TouchableOpacity
                     key={id}
-                    style={[styles.avatarOption, avatarId === id && { borderColor: theme.color, borderWidth: 4 }]}
+                    style={[styles.avatarOpt, avatarId === id && { borderColor: theme.color, borderWidth: 4 }]}
                     onPress={() => setAvatarId(id)}
                   >
-                    <HeroAvatar avatarId={id} size={80} showBorder={false} />
-                    <Text style={styles.avatarName}>
-                      {id === 'dragon' ? 'Dragon' : id === 'hero' ? 'Héros' : id === 'wizard' ? 'Sorcier' : 'Renard'}
-                    </Text>
+                    <HeroAvatar avatarId={id} size={72} showBorder={false} />
+                    <Text style={styles.avatarLabel}>{AVATAR_LABELS[id]}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
-            <TouchableOpacity style={styles.btn} onPress={goNext}>
-              <Text style={styles.btnText}>C'est parti ! →</Text>
+            <TouchableOpacity style={styles.btn} onPress={isAdd ? handleFinish : goNext}>
+              <Text style={styles.btnText}>{isAdd ? 'Créer ce héros 🚀' : 'Continuer'}</Text>
             </TouchableOpacity>
           </View>
         );
@@ -123,11 +132,11 @@ export default function OnboardingScreen() {
           <View style={styles.stepContent}>
             <Text style={styles.bigEmoji}>🔐</Text>
             <Text style={styles.title}>Code parent</Text>
-            <Text style={styles.subtitle}>Ce code protège le mode parent{'\n'}(stats, config, abonnement)</Text>
+            <Text style={styles.sub}>Protège le mode parent{'\n'}(stats, config, abonnement)</Text>
             <TextInput
               style={styles.input}
               placeholder="Code 4 chiffres"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor="rgba(255,255,255,0.5)"
               value={pin}
               onChangeText={(t) => { setPin(t.replace(/\D/g, '').slice(0, 4)); setPinError(''); }}
               keyboardType="numeric"
@@ -135,22 +144,22 @@ export default function OnboardingScreen() {
               maxLength={4}
             />
             <TextInput
-              style={[styles.input, { marginTop: 12 }]}
+              style={[styles.input, { marginTop: 10 }]}
               placeholder="Confirmer le code"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor="rgba(255,255,255,0.5)"
               value={pinConfirm}
               onChangeText={(t) => { setPinConfirm(t.replace(/\D/g, '').slice(0, 4)); setPinError(''); }}
               keyboardType="numeric"
               secureTextEntry
               maxLength={4}
             />
-            {!!pinError && <Text style={styles.errorText}>{pinError}</Text>}
+            {!!pinError && <Text style={styles.error}>{pinError}</Text>}
             <TouchableOpacity
-              style={[styles.btn, pin.length < 4 && styles.btnDisabled]}
+              style={[styles.btn, pin.length < 4 && styles.btnOff]}
               onPress={handleFinish}
               disabled={pin.length < 4}
             >
-              <Text style={styles.btnText}>Créer mon compte 🚀</Text>
+              <Text style={styles.btnText}>C'est parti 🚀</Text>
             </TouchableOpacity>
           </View>
         );
@@ -158,16 +167,16 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <LinearGradient colors={GRADIENTS.primary} style={styles.gradient}>
-      <SafeAreaView style={styles.safe}>
+    <LinearGradient colors={GRADIENTS.primary} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <View style={styles.progressRow}>
-              {STEPS.map((_, i) => (
-                <View key={i} style={[styles.dot, i <= step && styles.dotActive]} />
+            <View style={styles.dots}>
+              {Array.from({ length: totalSteps }).map((_, i) => (
+                <View key={i} style={[styles.dot, i <= step && styles.dotOn]} />
               ))}
             </View>
-            <Animated.View style={{ opacity: fadeAnim, flex: 1 }}>
+            <Animated.View style={{ opacity: fadeAnim }}>
               {renderStep()}
             </Animated.View>
           </ScrollView>
@@ -178,120 +187,64 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
-  safe: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40 },
-  progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    paddingTop: 20,
-    paddingBottom: 30,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  dotActive: { backgroundColor: COLORS.white },
-  stepContent: { flex: 1, alignItems: 'center' },
-  bigEmoji: { fontSize: 60, marginBottom: 16 },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: COLORS.white,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
-  },
+  scroll: { flexGrow: 1, padding: 24, paddingBottom: 40 },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 16 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.3)' },
+  dotOn: { backgroundColor: COLORS.white, width: 20 },
+  stepContent: { alignItems: 'center' },
+  bigEmoji: { fontSize: 56, marginBottom: 12 },
+  title: { fontSize: 26, fontWeight: '900', color: COLORS.white, textAlign: 'center', marginBottom: 8 },
+  sub: { fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginBottom: 28, lineHeight: 22 },
   input: {
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     fontSize: 18,
     color: COLORS.white,
     width: '100%',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(255,255,255,0.25)',
     textAlign: 'center',
-    marginBottom: 8,
   },
   btn: {
     backgroundColor: COLORS.white,
-    borderRadius: 16,
+    borderRadius: 14,
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    marginTop: 24,
     width: '100%',
     alignItems: 'center',
+    marginTop: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
   },
-  btnDisabled: { opacity: 0.4 },
-  btnText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  agePicker: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 8,
-    width: '100%',
-  },
+  btnOff: { opacity: 0.35 },
+  btnText: { fontSize: 17, fontWeight: '800', color: COLORS.primary },
+  agePicker: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginBottom: 8, width: '100%' },
   agePill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  agePillSelected: {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.white,
-  },
-  agePillText: { fontSize: 16, fontWeight: '600', color: COLORS.white },
-  agePillTextSelected: { color: COLORS.primary },
-  avatarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 8,
-    width: '100%',
-  },
-  avatarOption: {
+  agePillOn: { backgroundColor: COLORS.white, borderColor: COLORS.white },
+  agePillText: { fontSize: 16, fontWeight: '700', color: COLORS.white },
+  agePillTextOn: { color: COLORS.primary },
+  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14, marginBottom: 8, width: '100%' },
+  avatarOpt: {
     alignItems: 'center',
     padding: 12,
-    borderRadius: 20,
+    borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderWidth: 4,
     borderColor: 'transparent',
-    width: 120,
+    width: 130,
   },
-  avatarName: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  errorText: {
-    color: '#FCA5A5',
-    fontSize: 13,
-    marginTop: 4,
-    textAlign: 'center',
-  },
+  avatarLabel: { marginTop: 8, fontSize: 14, fontWeight: '700', color: COLORS.white },
+  error: { color: '#FCA5A5', fontSize: 13, marginTop: 6, textAlign: 'center' },
 });

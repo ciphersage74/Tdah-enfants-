@@ -1,129 +1,177 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
 import { useAppStore } from '../store/useAppStore';
+import { useActiveProfile } from '../hooks/useActiveProfile';
 import HeroAvatar from '../components/HeroAvatar';
 import CoinBadge from '../components/CoinBadge';
 import XpBar from '../components/XpBar';
 import RoutineCard from '../components/RoutineCard';
+import BadgeToast from '../components/BadgeToast';
 
 const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-const MONTHS_FR = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'];
+const MONTHS_FR = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
 export default function HomeScreen({ navigation }) {
-  const { childName, avatarId, coins, xp, level, streak, isPremium, customTasks, isRoutineCompletedToday } = useAppStore();
+  const { isPremium, profiles, isRoutineCompletedToday } = useAppStore();
+  const profile = useActiveProfile();
+  const [toastBadge, setToastBadge] = useState(null);
+  const [toastVisible, setToastVisible] = useState(false);
+
+  if (!profile) return null;
 
   const now = new Date();
   const dateStr = `${DAYS_FR[now.getDay()]} ${now.getDate()} ${MONTHS_FR[now.getMonth()]}`;
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-
+  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon ap\'' : 'Bonsoir';
   const morningDone = isRoutineCompletedToday('morning');
   const eveningDone = isRoutineCompletedToday('evening');
 
   const handleRoutinePress = (routineId) => {
     const routine = ROUTINES[routineId];
-    if (routine.premium && !isPremium) {
-      navigation.navigate('Paywall');
-      return;
-    }
+    if (routine.premium && !isPremium) { navigation.navigate('Paywall'); return; }
     if (isRoutineCompletedToday(routineId)) return;
     navigation.navigate('Quest', { routineId });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <BadgeToast
+        badge={toastBadge}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.heroSection}>
-            <HeroAvatar avatarId={avatarId} size={72} />
-            <View style={styles.heroInfo}>
-              <Text style={styles.greeting}>{greeting} !</Text>
-              <Text style={styles.heroName}>{childName}</Text>
-              <CoinBadge amount={coins} />
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Header card */}
+        <View style={styles.headerCard}>
+          <View style={styles.headerTop}>
+            <HeroAvatar
+              avatarId={profile.avatarId}
+              size={64}
+              equippedItems={profile.equippedItems || []}
+            />
+            <View style={styles.headerInfo}>
+              <Text style={styles.greetingText}>{greeting} !</Text>
+              <Text style={styles.heroName}>{profile.childName}</Text>
             </View>
-            {streak >= 2 && (
-              <View style={styles.streakBadge}>
-                <Text style={styles.streakEmoji}>🔥</Text>
-                <Text style={styles.streakNum}>{streak}</Text>
-              </View>
-            )}
+            <CoinBadge amount={profile.coins} />
           </View>
-          <View style={styles.xpSection}>
-            <XpBar xp={xp} level={level} />
+
+          <View style={styles.headerBottom}>
+            <XpBar xp={profile.xp} level={profile.level} />
+          </View>
+
+          {/* Streak */}
+          {profile.streak >= 2 && (
+            <View style={styles.streakRow}>
+              <Text style={styles.streakText}>🔥 {profile.streak} jours de suite !</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Multi-profile switcher */}
+        {profiles.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.profileSwitcher}
+            contentContainerStyle={styles.profileSwitcherContent}
+          >
+            {profiles.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.profilePill, p.id === profile.id && styles.profilePillActive]}
+                onPress={() => {
+                  useAppStore.getState().switchProfile(p.id);
+                }}
+              >
+                <Text style={styles.profilePillEmoji}>
+                  {p.avatarId === 'dragon' ? '🐉' : p.avatarId === 'hero' ? '🦸' : p.avatarId === 'wizard' ? '🧙' : '🦊'}
+                </Text>
+                <Text style={[styles.profilePillName, p.id === profile.id && styles.profilePillNameActive]}>
+                  {p.childName}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
+        {/* Date + actions */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Aujourd'hui — {dateStr}</Text>
+          <View style={styles.iconActions}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Badges')}>
+              <Text style={styles.iconBtnText}>🏆</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Shop')}>
+              <Text style={styles.iconBtnText}>🛍️</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Today */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Aujourd'hui</Text>
-          <Text style={styles.dateText}>{dateStr}</Text>
+        {/* Routines */}
+        <RoutineCard
+          routine={ROUTINES.morning}
+          tasksCount={(profile.customTasks?.morning || ROUTINES.morning.defaultTasks).length}
+          completedCount={morningDone ? (profile.customTasks?.morning || ROUTINES.morning.defaultTasks).length : 0}
+          isCompleted={morningDone}
+          locked={false}
+          onPress={() => handleRoutinePress('morning')}
+        />
+        <RoutineCard
+          routine={ROUTINES.evening}
+          tasksCount={(profile.customTasks?.evening || ROUTINES.evening.defaultTasks).length}
+          completedCount={eveningDone ? (profile.customTasks?.evening || ROUTINES.evening.defaultTasks).length : 0}
+          isCompleted={eveningDone}
+          locked={!isPremium}
+          onPress={() => handleRoutinePress('evening')}
+        />
+
+        {/* Rewards banner */}
+        {(profile.rewards || []).filter((r) => r.active && !r.claimed).length > 0 && (
+          <TouchableOpacity style={styles.rewardBanner} onPress={() => navigation.navigate('Rewards')}>
+            <Text style={styles.rewardBannerEmoji}>🎁</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rewardBannerTitle}>Récompenses disponibles</Text>
+              <Text style={styles.rewardBannerSub}>
+                {(profile.rewards || []).filter((r) => r.active && !r.claimed).length} récompense(s) à débloquer
+              </Text>
+            </View>
+            <Text style={styles.rewardBannerArrow}>›</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Status message */}
+        <View style={styles.statusBox}>
+          {!morningDone ? (
+            <>
+              <Text style={styles.statusEmoji}>⚔️</Text>
+              <Text style={styles.statusText}>Lance ta quête du matin pour commencer !</Text>
+            </>
+          ) : morningDone && (!eveningDone && isPremium) ? (
+            <>
+              <Text style={styles.statusEmoji}>🌟</Text>
+              <Text style={styles.statusText}>Super ce matin ! La quête du soir t'attend.</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.statusEmoji}>🏆</Text>
+              <Text style={styles.statusText}>Journée accomplie ! Tu es un vrai héros.</Text>
+            </>
+          )}
         </View>
-
-        <View style={styles.routines}>
-          <RoutineCard
-            routine={ROUTINES.morning}
-            tasksCount={customTasks.morning.length}
-            completedCount={morningDone ? customTasks.morning.length : 0}
-            isCompleted={morningDone}
-            locked={false}
-            onPress={() => handleRoutinePress('morning')}
-          />
-          <RoutineCard
-            routine={ROUTINES.evening}
-            tasksCount={customTasks.evening.length}
-            completedCount={eveningDone ? customTasks.evening.length : 0}
-            isCompleted={eveningDone}
-            locked={!isPremium}
-            onPress={() => handleRoutinePress('evening')}
-          />
-        </View>
-
-        {/* Motivation */}
-        {!morningDone && (
-          <View style={styles.motivationBox}>
-            <Text style={styles.motivationEmoji}>⚔️</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.motivationTitle}>Mission du jour !</Text>
-              <Text style={styles.motivationText}>
-                Complète ta routine du matin pour gagner des pièces et de l'XP !
-              </Text>
-            </View>
-          </View>
-        )}
-        {morningDone && !eveningDone && isPremium && (
-          <View style={[styles.motivationBox, { backgroundColor: '#DBEAFE' }]}>
-            <Text style={styles.motivationEmoji}>🌟</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.motivationTitle, { color: '#1E40AF' }]}>Super ce matin !</Text>
-              <Text style={[styles.motivationText, { color: '#3B82F6' }]}>
-                Ce soir, il reste la quête du soir à compléter !
-              </Text>
-            </View>
-          </View>
-        )}
-        {morningDone && (eveningDone || !isPremium) && (
-          <View style={[styles.motivationBox, { backgroundColor: COLORS.successLight }]}>
-            <Text style={styles.motivationEmoji}>🏆</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.motivationTitle, { color: '#065F46' }]}>Journée accomplie !</Text>
-              <Text style={[styles.motivationText, { color: '#059669' }]}>
-                Tu as tout réussi aujourd'hui. Tu es un vrai héros !
-              </Text>
-            </View>
-          </View>
-        )}
-
-        <View style={{ height: 20 }} />
       </ScrollView>
 
       {/* Parent button */}
       <TouchableOpacity style={styles.parentBtn} onPress={() => navigation.navigate('ParentPin')}>
-        <Text style={styles.parentBtnText}>👨‍👩‍👧 Mode Parent</Text>
+        <Text style={styles.parentBtnText}>Mode Parent</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -132,95 +180,114 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flex: 1 },
-  header: {
+  scrollContent: { padding: 16, paddingBottom: 8, gap: 12 },
+
+  headerCard: {
     backgroundColor: COLORS.white,
-    margin: 16,
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
+    gap: 12,
   },
-  heroSection: {
+  headerTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerInfo: { flex: 1 },
+  greetingText: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
+  heroName: { fontSize: 20, fontWeight: '900', color: COLORS.textPrimary, marginTop: 1 },
+  headerBottom: {},
+  streakRow: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  streakText: { fontSize: 13, fontWeight: '700', color: '#B45309' },
+
+  profileSwitcher: { marginTop: -4 },
+  profileSwitcherContent: { gap: 8, paddingVertical: 4 },
+  profilePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 16,
-  },
-  heroInfo: { flex: 1, gap: 4 },
-  greeting: { fontSize: 13, color: COLORS.textSecondary },
-  heroName: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
-    marginBottom: 6,
-  },
-  streakBadge: {
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    padding: 8,
-    borderRadius: 12,
+    gap: 6,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#F59E0B',
+    borderColor: COLORS.border,
   },
-  streakEmoji: { fontSize: 20 },
-  streakNum: { fontSize: 16, fontWeight: '900', color: '#D97706' },
-  xpSection: { marginTop: 4 },
-  sectionHeader: {
+  profilePillActive: { borderColor: COLORS.primary, backgroundColor: COLORS.surface },
+  profilePillEmoji: { fontSize: 16 },
+  profilePillName: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  profilePillNameActive: { color: COLORS.primary },
+
+  sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 8,
+    marginTop: 4,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  iconActions: { flexDirection: 'row', gap: 8 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  dateText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textTransform: 'capitalize',
-  },
-  routines: { paddingHorizontal: 16 },
-  motivationBox: {
+  iconBtnText: { fontSize: 18 },
+
+  rewardBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EDE9FE',
-    margin: 16,
-    marginTop: 4,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  motivationEmoji: { fontSize: 28 },
-  motivationTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.primary,
-    marginBottom: 2,
+  rewardBannerEmoji: { fontSize: 24 },
+  rewardBannerTitle: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
+  rewardBannerSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
+  rewardBannerArrow: { fontSize: 22, color: COLORS.textMuted, fontWeight: '300' },
+
+  statusBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 14,
   },
-  motivationText: {
-    fontSize: 13,
-    color: COLORS.primaryLight,
-    lineHeight: 18,
-  },
+  statusEmoji: { fontSize: 24 },
+  statusText: { fontSize: 14, color: COLORS.primary, fontWeight: '600', flex: 1, lineHeight: 20 },
+
   parentBtn: {
     margin: 16,
     marginTop: 8,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: 12,
     backgroundColor: COLORS.white,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: COLORS.border,
     alignItems: 'center',
   },
-  parentBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-  },
+  parentBtnText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
 });
