@@ -33,6 +33,7 @@ const defaultState = {
   notifEveningEnabled: false,
   notifMorningTime: '07:30',
   notifEveningTime: '18:30',
+  restDays: [],
 };
 
 const save = async (state) => {
@@ -260,6 +261,12 @@ export const useAppStore = create((set, get) => ({
     set(next);
     save(next);
     return true;
+  },
+
+  updateRestDays: (days) => {
+    const next = { ...get(), restDays: days };
+    set(next);
+    save(next);
   },
 
   setParentMode: (v) => set({ isParentMode: v }),

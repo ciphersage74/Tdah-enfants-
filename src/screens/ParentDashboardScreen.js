@@ -16,6 +16,15 @@ const TASK_DURATIONS = [
   { value: 300, label: '5 min' }, { value: 600, label: '10 min' },
   { value: 900, label: '15 min' }, { value: 1800, label: '30 min' },
 ];
+const WEEK_DAYS = [
+  { label: 'L', full: 'Lun', value: 1 },
+  { label: 'M', full: 'Mar', value: 2 },
+  { label: 'M', full: 'Mer', value: 3 },
+  { label: 'J', full: 'Jeu', value: 4 },
+  { label: 'V', full: 'Ven', value: 5 },
+  { label: 'S', full: 'Sam', value: 6 },
+  { label: 'D', full: 'Dim', value: 0 },
+];
 
 const TABS = ['📊 Stats', '⚙️ Config', '🔔 Notifs', '🎁 Récompenses', '⭐ Abonnement'];
 const DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
@@ -23,7 +32,7 @@ const DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 export default function ParentDashboardScreen({ navigation }) {
   const {
     isPremium, updateCustomTasks, addCustomTask, removeCustomTask, setParentMode,
-    getWeeklyStats, unlockPremium,
+    getWeeklyStats, unlockPremium, restDays, updateRestDays,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   } = useAppStore();
   const profile = useActiveProfile();
@@ -136,9 +145,49 @@ export default function ParentDashboardScreen({ navigation }) {
     </ScrollView>
   );
 
+  const toggleRestDay = (dayValue) => {
+    const current = restDays || [];
+    const updated = current.includes(dayValue)
+      ? current.filter((d) => d !== dayValue)
+      : [...current, dayValue];
+    updateRestDays(updated);
+  };
+
   // ── Config ─────────────────────────────────────────────────────
-  const renderConfig = () => (
+  const renderConfig = () => {
+    const activeRestDays = restDays || [];
+    const restDayNames = WEEK_DAYS.filter((d) => activeRestDays.includes(d.value)).map((d) => d.full);
+
+    return (
     <ScrollView showsVerticalScrollIndicator={false}>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>🌴 Jours de repos</Text>
+        <Text style={[styles.cardSub, { marginBottom: 14 }]}>
+          Les quêtes sont désactivées ces jours-là
+        </Text>
+        <View style={styles.restDayRow}>
+          {WEEK_DAYS.map((day) => {
+            const active = activeRestDays.includes(day.value);
+            return (
+              <TouchableOpacity
+                key={day.value}
+                style={[styles.restDayBtn, active && styles.restDayBtnOn]}
+                onPress={() => toggleRestDay(day.value)}
+              >
+                <Text style={[styles.restDayLabel, active && styles.restDayLabelOn]}>
+                  {day.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <Text style={[styles.cardSub, { marginTop: 10 }]}>
+          {restDayNames.length === 0
+            ? 'Aucun jour de repos configuré'
+            : `Repos : ${restDayNames.join(', ')}`}
+        </Text>
+      </View>
+
       {Object.values(ROUTINES).map((routine) => {
         const locked = routine.premium && !isPremium;
         const activeTasks = profile.customTasks?.[routine.id] || routine.defaultTasks;
@@ -253,7 +302,8 @@ export default function ParentDashboardScreen({ navigation }) {
       })}
       <View style={{ height: 20 }} />
     </ScrollView>
-  );
+    );
+  };
 
   // ── Notifs ─────────────────────────────────────────────────────
   const renderNotifs = () => (
@@ -476,6 +526,14 @@ const styles = StyleSheet.create({
   premiumCtaText: { fontSize: 17, fontWeight: '900', color: COLORS.white },
   featureItem: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
   featureText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
+  restDayRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  restDayBtn: {
+    flex: 1, aspectRatio: 1, borderRadius: 10, backgroundColor: COLORS.background,
+    borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center',
+  },
+  restDayBtnOn: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+  restDayLabel: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary },
+  restDayLabelOn: { color: '#065F46' },
   customTaskRow: { backgroundColor: '#F5F3FF', borderRadius: 8, marginHorizontal: -4, paddingHorizontal: 4 },
   deleteBtn: { padding: 4 },
   addTaskBtn: {

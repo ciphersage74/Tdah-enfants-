@@ -3,18 +3,24 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, GRADIENTS } from '../constants/colors';
 
-export default function RoutineCard({ routine, tasksCount, completedCount, isCompleted, isPremium, locked, onPress }) {
+export default function RoutineCard({ routine, tasksCount, completedCount, isCompleted, isPremium, locked, resting, onPress }) {
   const gradient = GRADIENTS[routine.gradientKey] || GRADIENTS.primary;
   const progress = tasksCount > 0 ? completedCount / tasksCount : 0;
 
+  const cardColors = resting ? ['#6EE7B7', '#10B981'] : locked ? ['#9CA3AF', '#6B7280'] : gradient;
+
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.wrapper}>
-      <LinearGradient colors={locked ? ['#9CA3AF', '#6B7280'] : gradient} style={styles.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+    <TouchableOpacity onPress={resting ? undefined : onPress} activeOpacity={resting ? 1 : 0.85} style={styles.wrapper}>
+      <LinearGradient colors={cardColors} style={styles.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         <View style={styles.header}>
-          <Text style={styles.emoji}>{routine.emoji}</Text>
+          <Text style={styles.emoji}>{resting ? '🌴' : routine.emoji}</Text>
           <View style={styles.titleArea}>
             <Text style={styles.name}>{routine.name}</Text>
-            {locked ? (
+            {resting ? (
+              <View style={styles.restBadge}>
+                <Text style={styles.restText}>Jour de repos</Text>
+              </View>
+            ) : locked ? (
               <View style={styles.premiumBadge}>
                 <Text style={styles.premiumText}>🔒 Premium</Text>
               </View>
@@ -26,14 +32,14 @@ export default function RoutineCard({ routine, tasksCount, completedCount, isCom
               <Text style={styles.sub}>{tasksCount} missions</Text>
             )}
           </View>
-          {!locked && !isCompleted && (
+          {!locked && !isCompleted && !resting && (
             <View style={styles.playBtn}>
               <Text style={styles.playText}>▶</Text>
             </View>
           )}
         </View>
 
-        {!locked && !isCompleted && tasksCount > 0 && (
+        {!locked && !isCompleted && !resting && tasksCount > 0 && (
           <View style={styles.progressArea}>
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -42,8 +48,11 @@ export default function RoutineCard({ routine, tasksCount, completedCount, isCom
           </View>
         )}
 
-        {locked && (
+        {locked && !resting && (
           <Text style={styles.lockDesc}>Débloque pour accéder à la routine du soir</Text>
+        )}
+        {resting && (
+          <Text style={styles.lockDesc}>Profite de ta journée, les quêtes reprennent demain 🌟</Text>
         )}
       </LinearGradient>
     </TouchableOpacity>
@@ -113,6 +122,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.white,
   },
+  restBadge: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  restText: { fontSize: 12, color: COLORS.white, fontWeight: '700' },
   premiumBadge: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 8,

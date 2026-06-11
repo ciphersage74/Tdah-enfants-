@@ -15,7 +15,7 @@ const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTHS_FR = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
 export default function HomeScreen({ navigation }) {
-  const { isPremium, isRoutineCompletedToday } = useAppStore();
+  const { isPremium, isRoutineCompletedToday, restDays } = useAppStore();
   const profile = useActiveProfile();
   const [toastBadge, setToastBadge] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -28,6 +28,7 @@ export default function HomeScreen({ navigation }) {
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon ap\'' : 'Bonsoir';
   const morningDone = isRoutineCompletedToday('morning');
   const eveningDone = isRoutineCompletedToday('evening');
+  const isRestDay = (restDays || []).includes(now.getDay());
 
   const handleRoutinePress = (routineId) => {
     const routine = ROUTINES[routineId];
@@ -116,6 +117,7 @@ export default function HomeScreen({ navigation }) {
           completedCount={morningDone ? (profile.customTasks?.morning || ROUTINES.morning.defaultTasks).length : 0}
           isCompleted={morningDone}
           locked={false}
+          resting={isRestDay}
           onPress={() => handleRoutinePress('morning')}
         />
         <RoutineCard
@@ -124,14 +126,20 @@ export default function HomeScreen({ navigation }) {
           completedCount={eveningDone ? (profile.customTasks?.evening || ROUTINES.evening.defaultTasks).length : 0}
           isCompleted={eveningDone}
           locked={!isPremium}
+          resting={isRestDay}
           onPress={() => handleRoutinePress('evening')}
         />
 
         {/* Status */}
-        <View style={styles.statusBox}>
-          {!morningDone && <Text style={styles.statusText}>⚔️  Lance ta quête du matin !</Text>}
-          {morningDone && !eveningDone && isPremium && <Text style={styles.statusText}>🌟  Super ce matin ! La quête du soir t'attend.</Text>}
-          {morningDone && (!isPremium || eveningDone) && (
+        <View style={[styles.statusBox, isRestDay && styles.statusBoxRest]}>
+          {isRestDay && (
+            <Text style={[styles.statusText, styles.statusTextRest]}>
+              🌴  Bonne journée de repos, {profile.childName} ! Tu l'as bien mérité.
+            </Text>
+          )}
+          {!isRestDay && !morningDone && <Text style={styles.statusText}>⚔️  Lance ta quête du matin !</Text>}
+          {!isRestDay && morningDone && !eveningDone && isPremium && <Text style={styles.statusText}>🌟  Super ce matin ! La quête du soir t'attend.</Text>}
+          {!isRestDay && morningDone && (!isPremium || eveningDone) && (
             <Text style={styles.statusText}>
               🏆  Journée accomplie ! Tu es {profile.gender === 'girl' ? 'une vraie héroïne' : 'un vrai héros'}.
             </Text>
@@ -185,10 +193,10 @@ const styles = StyleSheet.create({
   actionBadgeText: { fontSize: 9, fontWeight: '900', color: COLORS.white },
 
   todayLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
-  statusBox: {
-    backgroundColor: COLORS.surface, borderRadius: 14, padding: 14,
-  },
+  statusBox: { backgroundColor: COLORS.surface, borderRadius: 14, padding: 14 },
+  statusBoxRest: { backgroundColor: '#D1FAE5' },
   statusText: { fontSize: 14, color: COLORS.primary, fontWeight: '600', lineHeight: 20 },
+  statusTextRest: { color: '#065F46' },
   parentBtn: {
     margin: 16, marginTop: 8, padding: 14, borderRadius: 12,
     backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center',
