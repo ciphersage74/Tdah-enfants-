@@ -15,22 +15,12 @@ function Root() {
 
   useEffect(() => {
     loadState().then(async () => {
-      const state = useAppStore.getState();
-      const { hasOnboarded, profiles } = state;
-
-      if (!hasOnboarded || profiles.length === 0) {
-        setInitialRoute('Onboarding');
-      } else if (profiles.length > 1) {
-        setInitialRoute('ProfileSelect');
-      } else {
-        setInitialRoute('Home');
-      }
-
+      const { hasOnboarded } = useAppStore.getState();
+      setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
       if (hasOnboarded) {
         const granted = await requestPermissions();
-        if (granted) await applySchedule();
+        if (granted) applySchedule();
       }
-
       setReady(true);
     });
   }, []);

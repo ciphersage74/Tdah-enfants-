@@ -15,7 +15,7 @@ const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTHS_FR = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
 export default function HomeScreen({ navigation }) {
-  const { isPremium, profiles, isRoutineCompletedToday } = useAppStore();
+  const { isPremium, isRoutineCompletedToday } = useAppStore();
   const profile = useActiveProfile();
   const [toastBadge, setToastBadge] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -36,85 +36,78 @@ export default function HomeScreen({ navigation }) {
     navigation.navigate('Quest', { routineId });
   };
 
+  const claimableRewards = (profile.rewards || []).filter(
+    (r) => r.active && !r.claimed && profile.coins >= r.cost
+  );
+  const activeRewards = (profile.rewards || []).filter((r) => r.active && !r.claimed);
+
   return (
     <SafeAreaView style={styles.safe}>
-      <BadgeToast
-        badge={toastBadge}
-        visible={toastVisible}
-        onHide={() => setToastVisible(false)}
-      />
+      <BadgeToast badge={toastBadge} visible={toastVisible} onHide={() => setToastVisible(false)} />
 
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.content}
       >
-        {/* Header card */}
+        {/* Header */}
         <View style={styles.headerCard}>
-          <View style={styles.headerTop}>
-            <HeroAvatar
-              avatarId={profile.avatarId}
-              size={64}
-              equippedItems={profile.equippedItems || []}
-            />
-            <View style={styles.headerInfo}>
+          <View style={styles.headerRow}>
+            <HeroAvatar avatarId={profile.avatarId} size={64} equippedItems={profile.equippedItems || []} />
+            <View style={styles.heroInfo}>
               <Text style={styles.greetingText}>{greeting} !</Text>
               <Text style={styles.heroName}>{profile.childName}</Text>
             </View>
             <CoinBadge amount={profile.coins} />
           </View>
-
-          <View style={styles.headerBottom}>
-            <XpBar xp={profile.xp} level={profile.level} />
-          </View>
-
-          {/* Streak */}
+          <XpBar xp={profile.xp} level={profile.level} />
           {profile.streak >= 2 && (
-            <View style={styles.streakRow}>
+            <View style={styles.streakBadge}>
               <Text style={styles.streakText}>🔥 {profile.streak} jours de suite !</Text>
             </View>
           )}
         </View>
 
-        {/* Multi-profile switcher */}
-        {profiles.length > 1 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.profileSwitcher}
-            contentContainerStyle={styles.profileSwitcherContent}
-          >
-            {profiles.map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.profilePill, p.id === profile.id && styles.profilePillActive]}
-                onPress={() => {
-                  useAppStore.getState().switchProfile(p.id);
-                }}
-              >
-                <Text style={styles.profilePillEmoji}>
-                  {p.avatarId === 'dragon' ? '🐉' : p.avatarId === 'hero' ? '🦸' : p.avatarId === 'wizard' ? '🧙' : '🦊'}
-                </Text>
-                <Text style={[styles.profilePillName, p.id === profile.id && styles.profilePillNameActive]}>
-                  {p.childName}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* Date + actions */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Aujourd'hui — {dateStr}</Text>
-          <View style={styles.iconActions}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Badges')}>
-              <Text style={styles.iconBtnText}>🏆</Text>
+        {/* Action buttons */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Badges')}>
+            <Text style={styles.actionEmoji}>🏆</Text>
+            <Text style={styles.actionLabel}>Badges</Text>
+            {profile.badges?.length > 0 && (
+              <View style={styles.actionBadge}>
+                <Text style={styles.actionBadgeText}>{profile.badges.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Shop')}>
+            <Text style={styles.actionEmoji}>🛍️</Text>
+            <Text style={styles.actionLabel}>Boutique</Text>
+            {profile.unlockedItems?.length > 0 && (
+              <View style={styles.actionBadge}>
+                <Text style={styles.actionBadgeText}>{profile.unlockedItems.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          {activeRewards.length > 0 && (
+            <TouchableOpacity
+              style={[styles.actionBtn, claimableRewards.length > 0 && styles.actionBtnReady]}
+              onPress={() => navigation.navigate('Rewards')}
+            >
+              <Text style={styles.actionEmoji}>🎁</Text>
+              <Text style={[styles.actionLabel, claimableRewards.length > 0 && styles.actionLabelReady]}>
+                {claimableRewards.length > 0 ? 'RÉCLAMER !' : 'Récompenses'}
+              </Text>
+              {claimableRewards.length > 0 && (
+                <View style={[styles.actionBadge, styles.actionBadgeReady]}>
+                  <Text style={styles.actionBadgeText}>{claimableRewards.length}</Text>
+                </View>
+              )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Shop')}>
-              <Text style={styles.iconBtnText}>🛍️</Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
+
+        {/* Today label */}
+        <Text style={styles.todayLabel}>Aujourd'hui — {dateStr}</Text>
 
         {/* Routines */}
         <RoutineCard
@@ -134,42 +127,14 @@ export default function HomeScreen({ navigation }) {
           onPress={() => handleRoutinePress('evening')}
         />
 
-        {/* Rewards banner */}
-        {(profile.rewards || []).filter((r) => r.active && !r.claimed).length > 0 && (
-          <TouchableOpacity style={styles.rewardBanner} onPress={() => navigation.navigate('Rewards')}>
-            <Text style={styles.rewardBannerEmoji}>🎁</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rewardBannerTitle}>Récompenses disponibles</Text>
-              <Text style={styles.rewardBannerSub}>
-                {(profile.rewards || []).filter((r) => r.active && !r.claimed).length} récompense(s) à débloquer
-              </Text>
-            </View>
-            <Text style={styles.rewardBannerArrow}>›</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Status message */}
+        {/* Status */}
         <View style={styles.statusBox}>
-          {!morningDone ? (
-            <>
-              <Text style={styles.statusEmoji}>⚔️</Text>
-              <Text style={styles.statusText}>Lance ta quête du matin pour commencer !</Text>
-            </>
-          ) : morningDone && (!eveningDone && isPremium) ? (
-            <>
-              <Text style={styles.statusEmoji}>🌟</Text>
-              <Text style={styles.statusText}>Super ce matin ! La quête du soir t'attend.</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.statusEmoji}>🏆</Text>
-              <Text style={styles.statusText}>Journée accomplie ! Tu es un vrai héros.</Text>
-            </>
-          )}
+          {!morningDone && <Text style={styles.statusText}>⚔️  Lance ta quête du matin !</Text>}
+          {morningDone && !eveningDone && isPremium && <Text style={styles.statusText}>🌟  Super ce matin ! La quête du soir t'attend.</Text>}
+          {morningDone && (!isPremium || eveningDone) && <Text style={styles.statusText}>🏆  Journée accomplie ! Tu es un vrai héros.</Text>}
         </View>
       </ScrollView>
 
-      {/* Parent button */}
       <TouchableOpacity style={styles.parentBtn} onPress={() => navigation.navigate('ParentPin')}>
         <Text style={styles.parentBtnText}>Mode Parent</Text>
       </TouchableOpacity>
@@ -180,114 +145,49 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 8, gap: 12 },
-
+  content: { padding: 16, paddingBottom: 8, gap: 12 },
   headerCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: COLORS.white, borderRadius: 20, padding: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
     gap: 12,
   },
-  headerTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerInfo: { flex: 1 },
-  greetingText: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  heroInfo: { flex: 1 },
+  greetingText: { fontSize: 12, color: COLORS.textSecondary },
   heroName: { fontSize: 20, fontWeight: '900', color: COLORS.textPrimary, marginTop: 1 },
-  headerBottom: {},
-  streakRow: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    alignSelf: 'flex-start',
+  streakBadge: {
+    backgroundColor: '#FEF3C7', borderRadius: 10, paddingHorizontal: 12,
+    paddingVertical: 6, alignSelf: 'flex-start',
   },
   streakText: { fontSize: 13, fontWeight: '700', color: '#B45309' },
 
-  profileSwitcher: { marginTop: -4 },
-  profileSwitcherContent: { gap: 8, paddingVertical: 4 },
-  profilePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: COLORS.border,
+  actionRow: { flexDirection: 'row', gap: 10 },
+  actionBtn: {
+    flex: 1, backgroundColor: COLORS.white, borderRadius: 14, padding: 12,
+    alignItems: 'center', gap: 4, position: 'relative',
+    borderWidth: 2, borderColor: 'transparent',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
-  profilePillActive: { borderColor: COLORS.primary, backgroundColor: COLORS.surface },
-  profilePillEmoji: { fontSize: 16 },
-  profilePillName: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
-  profilePillNameActive: { color: COLORS.primary },
+  actionBtnReady: { borderColor: COLORS.gold, backgroundColor: '#FFFBEB' },
+  actionEmoji: { fontSize: 22 },
+  actionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  actionLabelReady: { color: COLORS.goldDark },
+  actionBadge: {
+    position: 'absolute', top: 6, right: 6,
+    backgroundColor: COLORS.primary, width: 16, height: 16, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  actionBadgeReady: { backgroundColor: COLORS.gold },
+  actionBadgeText: { fontSize: 9, fontWeight: '900', color: COLORS.white },
 
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
-  iconActions: { flexDirection: 'row', gap: 8 },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  iconBtnText: { fontSize: 18 },
-
-  rewardBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: COLORS.gold,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  rewardBannerEmoji: { fontSize: 24 },
-  rewardBannerTitle: { fontSize: 14, fontWeight: '800', color: COLORS.textPrimary },
-  rewardBannerSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
-  rewardBannerArrow: { fontSize: 22, color: COLORS.textMuted, fontWeight: '300' },
-
+  todayLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   statusBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: COLORS.surface, borderRadius: 14, padding: 14,
   },
-  statusEmoji: { fontSize: 24 },
-  statusText: { fontSize: 14, color: COLORS.primary, fontWeight: '600', flex: 1, lineHeight: 20 },
-
+  statusText: { fontSize: 14, color: COLORS.primary, fontWeight: '600', lineHeight: 20 },
   parentBtn: {
-    margin: 16,
-    marginTop: 8,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
+    margin: 16, marginTop: 8, padding: 14, borderRadius: 12,
+    backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center',
   },
   parentBtnText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
 });

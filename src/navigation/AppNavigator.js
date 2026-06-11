@@ -3,7 +3,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import OnboardingScreen from '../screens/OnboardingScreen';
-import ProfileSelectScreen from '../screens/ProfileSelectScreen';
 import HomeScreen from '../screens/HomeScreen';
 import QuestScreen from '../screens/QuestScreen';
 import CelebrationScreen from '../screens/CelebrationScreen';
@@ -24,7 +23,6 @@ export default function AppNavigator({ initialRoute }) {
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="ProfileSelect" component={ProfileSelectScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen
           name="Quest"

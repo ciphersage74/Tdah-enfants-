@@ -10,36 +10,26 @@ import { useActiveProfile } from '../hooks/useActiveProfile';
 import { useNotifications } from '../hooks/useNotifications';
 import HeroAvatar from '../components/HeroAvatar';
 
-const TABS = ['Stats', 'Config', 'Notifs', 'Récompenses', 'Abonnement'];
+const TABS = ['📊 Stats', '⚙️ Config', '🔔 Notifs', '🎁 Récompenses', '⭐ Abonnement'];
 const DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
 export default function ParentDashboardScreen({ navigation }) {
   const {
-    isPremium, profiles, customTasks: _, updateCustomTasks,
-    setParentMode, getWeeklyStats, deleteProfile, unlockPremium,
+    isPremium, updateCustomTasks, setParentMode,
+    getWeeklyStats, unlockPremium,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   } = useAppStore();
   const profile = useActiveProfile();
   const { saveAndApply } = useNotifications();
-
   const [tab, setTab] = useState(0);
   const [notifSettings, setNotifSettings] = useState({
-    notifMorningEnabled,
-    notifEveningEnabled,
-    notifMorningTime,
-    notifEveningTime,
+    notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   });
 
   if (!profile) return null;
 
   const stats = getWeeklyStats();
-
   const handleClose = () => { setParentMode(false); navigation.navigate('Home'); };
-
-  const handleSaveNotifs = async () => {
-    await saveAndApply(notifSettings);
-    Alert.alert('Notifications enregistrées', 'Les rappels ont été mis à jour.');
-  };
 
   const toggleTask = (routineId, taskId) => {
     const tasks = profile.customTasks?.[routineId] || ROUTINES[routineId].defaultTasks;
@@ -48,122 +38,80 @@ export default function ParentDashboardScreen({ navigation }) {
       if (tasks.length <= 2) { Alert.alert('Minimum 2 tâches requises'); return; }
       updateCustomTasks(routineId, tasks.filter((t) => t.id !== taskId));
     } else {
-      const all = ROUTINES[routineId].defaultTasks;
-      const toAdd = all.find((t) => t.id === taskId);
+      const toAdd = ROUTINES[routineId].defaultTasks.find((t) => t.id === taskId);
       if (toAdd) updateCustomTasks(routineId, [...tasks, toAdd]);
     }
   };
 
-  const renderStats = () => {
-    const p = profile;
-    return (
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile selector */}
-        {profiles.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {profiles.map((pr) => (
-                <TouchableOpacity
-                  key={pr.id}
-                  style={[styles.profileChip, pr.id === p.id && styles.profileChipActive]}
-                  onPress={() => useAppStore.getState().switchProfile(pr.id)}
-                >
-                  <Text style={{ fontSize: 16 }}>
-                    {pr.avatarId === 'dragon' ? '🐉' : pr.avatarId === 'hero' ? '🦸' : pr.avatarId === 'wizard' ? '🧙' : '🦊'}
-                  </Text>
-                  <Text style={[styles.profileChipText, pr.id === p.id && styles.profileChipTextActive]}>
-                    {pr.childName}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        )}
+  const handleSaveNotifs = async () => {
+    await saveAndApply(notifSettings);
+    Alert.alert('✓ Notifications enregistrées');
+  };
 
-        {/* Child info */}
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <HeroAvatar avatarId={p.avatarId} size={56} equippedItems={p.equippedItems || []} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{p.childName}, {p.childAge} ans</Text>
-              <Text style={styles.cardSub}>Niveau {p.level} · {p.coins} 🪙 · {p.xp} XP</Text>
-              {p.streak >= 2 && <Text style={styles.streak}>🔥 {p.streak} jours consécutifs</Text>}
-            </View>
-            {profiles.length > 1 && (
-              <TouchableOpacity onPress={() => {
-                Alert.alert('Supprimer ' + p.childName + ' ?', 'Toutes les données seront perdues.', [
-                  { text: 'Annuler', style: 'cancel' },
-                  { text: 'Supprimer', style: 'destructive', onPress: () => { deleteProfile(p.id); handleClose(); } },
-                ]);
-              }}>
-                <Text style={{ fontSize: 18, color: COLORS.textMuted }}>🗑️</Text>
-              </TouchableOpacity>
+  // ── Stats ──────────────────────────────────────────────────────
+  const renderStats = () => (
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <HeroAvatar avatarId={profile.avatarId} size={56} equippedItems={profile.equippedItems || []} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{profile.childName}, {profile.childAge} ans</Text>
+            <Text style={styles.cardSub}>Niveau {profile.level}  ·  {profile.coins} 🪙  ·  {profile.xp} XP</Text>
+            {profile.streak >= 2 && (
+              <Text style={styles.streakLabel}>🔥 {profile.streak} jours consécutifs</Text>
             )}
           </View>
         </View>
+      </View>
 
-        {/* Weekly chart */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Cette semaine</Text>
-          <Text style={[styles.bigStat, { color: COLORS.primary }]}>{stats.completionRate}%</Text>
-          <Text style={styles.cardSub}>de completion</Text>
-          <View style={styles.weekRow}>
-            {stats.days.map((d, i) => (
-              <View key={i} style={styles.dayCol}>
-                <View style={[styles.dayDot, d.morning ? styles.dayDone : styles.dayEmpty]}>
-                  <Text style={{ fontSize: 10 }}>☀️</Text>
-                </View>
-                {isPremium && (
-                  <View style={[styles.dayDot, d.evening ? styles.dayDone : styles.dayEmpty]}>
-                    <Text style={{ fontSize: 10 }}>🌙</Text>
-                  </View>
-                )}
-                <Text style={styles.dayLabel}>{DAYS[new Date(d.date).getDay()]}</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Semaine en cours</Text>
+        <Text style={[styles.bigStat, { color: COLORS.primary }]}>{stats.completionRate}%</Text>
+        <Text style={styles.cardSub}>de complétion</Text>
+        <View style={styles.weekRow}>
+          {stats.days.map((d, i) => (
+            <View key={i} style={styles.dayCol}>
+              <View style={[styles.dayDot, d.morning ? styles.dayDone : styles.dayEmpty]}>
+                <Text style={{ fontSize: 11 }}>☀️</Text>
               </View>
-            ))}
-          </View>
+              {isPremium && (
+                <View style={[styles.dayDot, d.evening ? styles.dayDone : styles.dayEmpty]}>
+                  <Text style={{ fontSize: 11 }}>🌙</Text>
+                </View>
+              )}
+              <Text style={styles.dayLabel}>{DAYS[new Date(d.date).getDay()]}</Text>
+            </View>
+          ))}
         </View>
+      </View>
 
-        {/* Total stats */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Total</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{p.totalTasksDone || 0}</Text>
-              <Text style={styles.statKey}>tâches</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{p.totalRoutinesDone || 0}</Text>
-              <Text style={styles.statKey}>routines</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{p.badges?.length || 0}</Text>
-              <Text style={styles.statKey}>badges</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{p.totalCoinsEarned || 0}</Text>
-              <Text style={styles.statKey}>pièces gagnées</Text>
-            </View>
+      <View style={styles.statsGrid}>
+        {[
+          { value: profile.totalTasksDone || 0, label: 'tâches', emoji: '✅' },
+          { value: profile.totalRoutinesDone || 0, label: 'routines', emoji: '🎯' },
+          { value: profile.badges?.length || 0, label: 'badges', emoji: '🏆' },
+          { value: profile.unlockedItems?.length || 0, label: 'accessoires', emoji: '🛍️' },
+        ].map((s, i) => (
+          <View key={i} style={styles.statCard}>
+            <Text style={styles.statEmoji}>{s.emoji}</Text>
+            <Text style={styles.statValue}>{s.value}</Text>
+            <Text style={styles.statLabel}>{s.label}</Text>
           </View>
-        </View>
+        ))}
+      </View>
 
-        {profiles.length < (isPremium ? 4 : 2) && (
-          <TouchableOpacity
-            style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
-            onPress={() => navigation.navigate('Onboarding', { mode: 'add' })}
-          >
-            <Text style={{ fontSize: 28 }}>➕</Text>
-            <View>
-              <Text style={styles.cardTitle}>Ajouter un enfant</Text>
-              <Text style={styles.cardSub}>Créer un profil pour un autre héros</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        <View style={{ height: 20 }} />
-      </ScrollView>
-    );
-  };
+      <View style={[styles.card, { backgroundColor: '#EDE9FE' }]}>
+        <Text style={[styles.cardTitle, { color: COLORS.primary }]}>💡 Conseil du jour</Text>
+        <Text style={[styles.cardSub, { lineHeight: 20 }]}>
+          Les enfants TDAH progressent mieux avec des routines visuelles, des récompenses immédiates
+          et un cadre bienveillant plutôt que punitif. Chaque tâche complétée est une vraie victoire !
+        </Text>
+      </View>
+      <View style={{ height: 20 }} />
+    </ScrollView>
+  );
 
+  // ── Config ─────────────────────────────────────────────────────
   const renderConfig = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
       {Object.values(ROUTINES).map((routine) => {
@@ -172,13 +120,13 @@ export default function ParentDashboardScreen({ navigation }) {
         const activeIds = new Set(tasks.map((t) => t.id));
         return (
           <View key={routine.id} style={styles.card}>
-            <View style={[styles.row, { marginBottom: 4 }]}>
+            <View style={[styles.row, { marginBottom: 8 }]}>
               <Text style={{ fontSize: 22 }}>{routine.emoji}</Text>
               <Text style={styles.cardTitle}>{routine.name}</Text>
-              {locked && <Text style={styles.lockPill}>🔒 Premium</Text>}
+              {locked && <View style={styles.lockPill}><Text style={styles.lockPillText}>🔒 Premium</Text></View>}
             </View>
             {locked ? (
-              <Text style={styles.cardSub}>Débloque Premium pour modifier</Text>
+              <Text style={styles.cardSub}>Débloquez Premium pour personnaliser</Text>
             ) : (
               routine.defaultTasks.map((task) => (
                 <View key={task.id} style={styles.taskRow}>
@@ -200,70 +148,61 @@ export default function ParentDashboardScreen({ navigation }) {
     </ScrollView>
   );
 
+  // ── Notifs ─────────────────────────────────────────────────────
   const renderNotifs = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Rappels automatiques</Text>
-        <Text style={styles.cardSub}>Notification quotidienne pour démarrer la routine</Text>
+        <Text style={styles.cardTitle}>Rappels quotidiens</Text>
+        <Text style={[styles.cardSub, { marginBottom: 16 }]}>
+          Notification au bon moment pour que votre enfant ne rate pas sa routine
+        </Text>
 
-        <View style={styles.notifRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.notifLabel}>☀️ Routine du matin</Text>
-            <TextInput
-              style={styles.timeInput}
-              value={notifSettings.notifMorningTime}
-              onChangeText={(v) => setNotifSettings((s) => ({ ...s, notifMorningTime: v }))}
-              placeholder="07:30"
-              placeholderTextColor={COLORS.textMuted}
-              keyboardType="numbers-and-punctuation"
+        {[
+          {
+            label: '☀️ Routine du matin',
+            key: 'notifMorningEnabled',
+            timeKey: 'notifMorningTime',
+            placeholder: '07:30',
+          },
+          {
+            label: '🌙 Routine du soir',
+            key: 'notifEveningEnabled',
+            timeKey: 'notifEveningTime',
+            placeholder: '18:30',
+          },
+        ].map((n) => (
+          <View key={n.key} style={styles.notifRow}>
+            <View style={{ flex: 1, gap: 6 }}>
+              <Text style={styles.notifLabel}>{n.label}</Text>
+              <TextInput
+                style={[styles.timeInput, !notifSettings[n.key] && { opacity: 0.4 }]}
+                value={notifSettings[n.timeKey]}
+                onChangeText={(v) => setNotifSettings((s) => ({ ...s, [n.timeKey]: v }))}
+                placeholder={n.placeholder}
+                placeholderTextColor={COLORS.textMuted}
+                editable={notifSettings[n.key]}
+              />
+            </View>
+            <Switch
+              value={notifSettings[n.key]}
+              onValueChange={(v) => setNotifSettings((s) => ({ ...s, [n.key]: v }))}
+              trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+              thumbColor={notifSettings[n.key] ? COLORS.primary : '#fff'}
             />
           </View>
-          <Switch
-            value={notifSettings.notifMorningEnabled}
-            onValueChange={(v) => setNotifSettings((s) => ({ ...s, notifMorningEnabled: v }))}
-            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-            thumbColor={notifSettings.notifMorningEnabled ? COLORS.primary : '#fff'}
-          />
-        </View>
-
-        <View style={[styles.notifRow, { marginTop: 12 }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.notifLabel}>🌙 Routine du soir</Text>
-            <TextInput
-              style={styles.timeInput}
-              value={notifSettings.notifEveningTime}
-              onChangeText={(v) => setNotifSettings((s) => ({ ...s, notifEveningTime: v }))}
-              placeholder="18:30"
-              placeholderTextColor={COLORS.textMuted}
-              keyboardType="numbers-and-punctuation"
-            />
-          </View>
-          <Switch
-            value={notifSettings.notifEveningEnabled}
-            onValueChange={(v) => setNotifSettings((s) => ({ ...s, notifEveningEnabled: v }))}
-            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-            thumbColor={notifSettings.notifEveningEnabled ? COLORS.primary : '#fff'}
-          />
-        </View>
+        ))}
 
         <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNotifs}>
-          <Text style={styles.saveBtnText}>Enregistrer les notifications</Text>
+          <Text style={styles.saveBtnText}>Enregistrer</Text>
         </TouchableOpacity>
-      </View>
-
-      <View style={[styles.card, { backgroundColor: '#EDE9FE' }]}>
-        <Text style={styles.cardTitle}>💡 Conseil</Text>
-        <Text style={[styles.cardSub, { lineHeight: 20 }]}>
-          Les enfants TDAH répondent mieux aux rappels visuels et sonores réguliers.
-          Configurez les notifications 15 minutes avant le début réel de la routine.
-        </Text>
       </View>
       <View style={{ height: 20 }} />
     </ScrollView>
   );
 
+  // ── Récompenses ────────────────────────────────────────────────
   const renderRewards = () => (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, paddingBottom: 20 }}>
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('Rewards', { parentView: true })}
@@ -273,39 +212,52 @@ export default function ParentDashboardScreen({ navigation }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.cardTitle}>Gérer les récompenses</Text>
             <Text style={styles.cardSub}>
-              {(profile.rewards || []).length} récompense(s) configurée(s)
+              {(profile.rewards || []).filter((r) => !r.claimed).length} active(s) ·{' '}
+              {(profile.rewards || []).filter((r) => r.claimed).length} réclamée(s)
             </Text>
           </View>
-          <Text style={{ fontSize: 20, color: COLORS.textMuted }}>›</Text>
+          <Text style={{ fontSize: 22, color: COLORS.textMuted }}>›</Text>
         </View>
       </TouchableOpacity>
       <View style={[styles.card, { backgroundColor: '#F0FDF4' }]}>
-        <Text style={[styles.cardTitle, { color: '#065F46' }]}>💡 Comment ça marche</Text>
+        <Text style={[styles.cardTitle, { color: '#065F46' }]}>💡 Pourquoi ça marche</Text>
         <Text style={[styles.cardSub, { lineHeight: 20, color: '#059669' }]}>
-          {`Créez des récompenses réelles (ex: cinéma = 300 pièces). Votre enfant voit ses pièces s'accumuler et peut les échanger. Le cerveau TDAH répond bien aux récompenses tangibles à court terme.`}
+          Les récompenses concrètes et à court terme sont particulièrement efficaces pour les cerveaux TDAH.
+          Proposez des paliers réalistes (200-400 pièces = 1-2 semaines de régularité).
+          La prévisibilité réduit l'anxiété et augmente la motivation.
         </Text>
       </View>
     </View>
   );
 
+  // ── Abonnement ─────────────────────────────────────────────────
   const renderSubscription = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
       {isPremium ? (
-        <View style={[styles.card, { backgroundColor: '#D1FAE5', alignItems: 'center', padding: 24 }]}>
-          <Text style={{ fontSize: 40, marginBottom: 8 }}>⭐</Text>
-          <Text style={[styles.cardTitle, { color: '#065F46', fontSize: 20 }]}>Premium actif</Text>
-          <Text style={[styles.cardSub, { textAlign: 'center', color: '#059669' }]}>
-            Toutes les fonctionnalités sont débloquées
+        <View style={[styles.card, { backgroundColor: '#D1FAE5', alignItems: 'center', padding: 28 }]}>
+          <Text style={{ fontSize: 44, marginBottom: 8 }}>⭐</Text>
+          <Text style={[styles.cardTitle, { color: '#065F46', fontSize: 20, textAlign: 'center' }]}>Premium actif</Text>
+          <Text style={[styles.cardSub, { textAlign: 'center', color: '#059669', lineHeight: 20 }]}>
+            Toutes les fonctionnalités sont débloquées.{'\n'}Merci pour votre confiance !
           </Text>
         </View>
       ) : (
         <>
-          <TouchableOpacity style={styles.premiumBtn} onPress={() => navigation.navigate('Paywall')}>
-            <Text style={styles.premiumBtnText}>⭐  Passer à Premium</Text>
+          <TouchableOpacity
+            style={styles.premiumCta}
+            onPress={() => navigation.navigate('Paywall')}
+          >
+            <Text style={styles.premiumCtaText}>⭐  Passer à Premium</Text>
           </TouchableOpacity>
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Ce que vous déverrouillez</Text>
-            {['🌙 Routine du soir', '👨‍👩‍👧‍👦 Jusqu\'à 4 profils', '📊 Stats complètes', '⚙️ Tâches personnalisées', '🔔 Notifications', '🎁 Récompenses illimitées'].map((f, i) => (
+            <Text style={styles.cardTitle}>Ce que vous déverrouillez :</Text>
+            {[
+              '🌙  Routine du soir complète',
+              '⚙️  Personnalisation des tâches',
+              '🔔  Notifications quotidiennes',
+              '📊  Statistiques avancées',
+              '🎁  Récompenses illimitées',
+            ].map((f, i) => (
               <View key={i} style={styles.featureItem}>
                 <Text style={styles.featureText}>{f}</Text>
               </View>
@@ -317,19 +269,19 @@ export default function ParentDashboardScreen({ navigation }) {
     </ScrollView>
   );
 
-  const tabRenderers = [renderStats, renderConfig, renderNotifs, renderRewards, renderSubscription];
+  const tabs = [renderStats, renderConfig, renderNotifs, renderRewards, renderSubscription];
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mode Parent</Text>
         <TouchableOpacity onPress={handleClose}>
-          <Text style={styles.closeText}>Fermer ✕</Text>
+          <Text style={styles.closeText}>Fermer  ✕</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
-        <View style={styles.tabs}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsRow}>
+        <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
           {TABS.map((t, i) => (
             <TouchableOpacity
               key={i}
@@ -342,8 +294,8 @@ export default function ParentDashboardScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 12 }}>
-        {tabRenderers[tab]?.()}
+      <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 8 }}>
+        {tabs[tab]?.()}
       </View>
     </SafeAreaView>
   );
@@ -352,132 +304,69 @@ export default function ParentDashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    paddingBottom: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12,
   },
   headerTitle: { fontSize: 20, fontWeight: '900', color: COLORS.textPrimary },
   closeText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
-  tabsScroll: { flexGrow: 0 },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 6,
-    paddingBottom: 4,
-  },
+  tabsRow: { flexGrow: 0 },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20,
+    backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.border,
   },
   tabActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  tabText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  tabText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   tabTextActive: { color: COLORS.white },
   card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 2, flex: 1 },
+  cardTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, flex: 1, marginBottom: 2 },
   cardSub: { fontSize: 13, color: COLORS.textSecondary },
-  streak: { fontSize: 12, color: '#B45309', fontWeight: '700', marginTop: 2 },
+  streakLabel: { fontSize: 12, color: '#B45309', fontWeight: '700', marginTop: 2 },
   bigStat: { fontSize: 52, fontWeight: '900', textAlign: 'center', marginVertical: 4 },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
   dayCol: { alignItems: 'center', gap: 4 },
   dayDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dayDone: { backgroundColor: COLORS.successLight },
   dayEmpty: { backgroundColor: COLORS.border },
-  dayLabel: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600' },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 },
-  statBox: {
-    flex: 1,
-    minWidth: '40%',
-    backgroundColor: COLORS.background,
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
+  dayLabel: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '700' },
+  statsGrid: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  statCard: {
+    flex: 1, backgroundColor: COLORS.white, borderRadius: 14, padding: 12,
+    alignItems: 'center', gap: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
-  statValue: { fontSize: 24, fontWeight: '900', color: COLORS.primary },
-  statKey: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600', textAlign: 'center' },
-  profileChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-  },
-  profileChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.surface },
-  profileChipText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
-  profileChipTextActive: { color: COLORS.primary },
+  statEmoji: { fontSize: 18 },
+  statValue: { fontSize: 22, fontWeight: '900', color: COLORS.primary },
+  statLabel: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600', textAlign: 'center' },
   lockPill: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    backgroundColor: COLORS.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
   },
+  lockPillText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
   taskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 10,
+    borderTopWidth: 1, borderTopColor: COLORS.border, gap: 10,
   },
   taskEmoji: { fontSize: 18, width: 26 },
   taskName: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
-  notifRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  notifLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
+  notifRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  notifLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   timeInput: {
-    backgroundColor: COLORS.background,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    width: 80,
+    backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+    fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, borderWidth: 1, borderColor: COLORS.border, width: 80,
   },
   saveBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 16,
+    backgroundColor: COLORS.primary, borderRadius: 12, padding: 14, alignItems: 'center',
   },
   saveBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
-  premiumBtn: {
-    backgroundColor: COLORS.premium,
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
+  premiumCta: {
+    backgroundColor: COLORS.premium, borderRadius: 14, padding: 18, alignItems: 'center',
     marginBottom: 12,
-    shadowColor: COLORS.premium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: COLORS.premium, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
-  premiumBtnText: { fontSize: 16, fontWeight: '900', color: COLORS.white },
-  featureItem: { paddingVertical: 8, borderTopWidth: 1, borderTopColor: COLORS.border },
+  premiumCtaText: { fontSize: 17, fontWeight: '900', color: COLORS.white },
+  featureItem: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
   featureText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
 });
