@@ -12,9 +12,12 @@ export default function HeroAvatar({ avatarId = 'hero', size = 80, showBorder = 
   const faceItem = equippedItems.map(getShopItemById).find((i) => i?.position === 'face');
 
   return (
-    <View style={[styles.wrapper, { width: size * 1.4, height: size * 1.4 }]}>
+    <View style={[styles.wrapper, { width: size * 1.6, height: size * 1.5 }]}>
+      {/* Hat overlaps top of circle head */}
       {topItem && (
-        <Text style={[styles.overlayTop, { fontSize: size * 0.35, top: 0 }]}>{topItem.emoji}</Text>
+        <Text style={[styles.overlayTop, { fontSize: size * 0.42, top: 0, zIndex: 3 }]}>
+          {topItem.emoji}
+        </Text>
       )}
       <View
         style={[
@@ -26,16 +29,17 @@ export default function HeroAvatar({ avatarId = 'hero', size = 80, showBorder = 
             backgroundColor: theme.bg,
             borderWidth,
             borderColor: theme.color,
+            marginTop: topItem ? size * 0.18 : size * 0.2,
           },
         ]}
       >
         <Text style={{ fontSize: size * 0.48 }}>{theme.emoji}</Text>
         {faceItem && (
-          <Text style={[styles.faceOverlay, { fontSize: size * 0.28 }]}>{faceItem.emoji}</Text>
+          <Text style={[styles.faceOverlay, { fontSize: size * 0.3 }]}>{faceItem.emoji}</Text>
         )}
       </View>
       {rightItem && (
-        <Text style={[styles.overlayRight, { fontSize: size * 0.32, right: 0, bottom: size * 0.1 }]}>
+        <Text style={[styles.overlayRight, { fontSize: size * 0.38, right: 0, bottom: size * 0.15 }]}>
           {rightItem.emoji}
         </Text>
       )}
@@ -46,7 +50,6 @@ export default function HeroAvatar({ avatarId = 'hero', size = 80, showBorder = 
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
-    justifyContent: 'center',
     position: 'relative',
   },
   circle: {
@@ -55,9 +58,7 @@ const styles = StyleSheet.create({
   },
   overlayTop: {
     position: 'absolute',
-    top: 0,
     alignSelf: 'center',
-    zIndex: 2,
   },
   overlayRight: {
     position: 'absolute',
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
   },
   faceOverlay: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: 4,
+    right: 4,
   },
 });

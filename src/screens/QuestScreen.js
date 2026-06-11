@@ -162,9 +162,9 @@ export default function QuestScreen({ navigation, route }) {
             </View>
           ) : (
             <TouchableOpacity style={styles.timerBtn} onPress={startTimer}>
-              <Text style={styles.timerBtnText}>
-                ⏱  {formatTime(currentTask.duration)}
-              </Text>
+              <Text style={styles.timerBtnIcon}>▶</Text>
+              <Text style={styles.timerBtnLabel}>Commencer</Text>
+              <Text style={styles.timerBtnDuration}>{formatTime(currentTask.duration)}</Text>
             </TouchableOpacity>
           )}
         </Animated.View>
@@ -241,14 +241,18 @@ const styles = StyleSheet.create({
   timerTrack: { width: '100%', height: 8, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 4, overflow: 'hidden' },
   timerFill: { height: '100%', backgroundColor: COLORS.white, borderRadius: 4 },
   timerBtn: {
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 36,
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 4,
   },
-  timerBtnText: { fontSize: 15, color: COLORS.white, fontWeight: '600' },
+  timerBtnIcon: { fontSize: 28, color: COLORS.white },
+  timerBtnLabel: { fontSize: 20, fontWeight: '900', color: COLORS.white, letterSpacing: 0.5 },
+  timerBtnDuration: { fontSize: 14, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
 
   actions: { paddingHorizontal: 20, paddingBottom: 16, gap: 10 },
   runningCoins: { textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
