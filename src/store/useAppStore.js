@@ -36,6 +36,8 @@ const defaultState = {
   notifMorningTime: '07:30',
   notifEveningTime: '18:30',
   soundsEnabled: true,
+  // Anti-triche optionnel : le parent saisit son code pour valider la fin de quête
+  parentApprovalRequired: false,
   restDays: [],
   jokersUsedDates: [],
   moodLog: {},
@@ -442,6 +444,12 @@ export const useAppStore = create((set, get) => ({
 
   setSoundsEnabled: (enabled) => {
     const next = { ...get(), soundsEnabled: !!enabled };
+    set(next);
+    save(next);
+  },
+
+  setParentApprovalRequired: (enabled) => {
+    const next = { ...get(), parentApprovalRequired: !!enabled };
     set(next);
     save(next);
   },

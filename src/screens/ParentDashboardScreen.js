@@ -17,6 +17,21 @@ import { useNotifications } from '../hooks/useNotifications';
 import HeroAvatar from '../components/HeroAvatar';
 
 const TASK_EMOJIS = ['⭐', '🌟', '📝', '🎯', '💊', '🧹', '🛏️', '🎵', '📱', '🐕', '🌿', '🏃', '🍽️', '🧺', '👕', '🤝', '🎨', '📚', '🧴', '🌙'];
+
+// Suggestions tactiles : pré-remplissent le formulaire en un tap
+// (évite la page blanche sans imposer un catalogue de 500 quêtes)
+const TASK_SUGGESTIONS = [
+  { name: 'Faire son lit',         emoji: '🛏️', duration: 120 },
+  { name: 'Préparer son cartable', emoji: '🎒', duration: 300 },
+  { name: 'Mettre la table',       emoji: '🍽️', duration: 300 },
+  { name: 'Ranger ses jouets',     emoji: '🧸', duration: 600 },
+  { name: "Nourrir l'animal",      emoji: '🐕', duration: 120 },
+  { name: 'Faire ses devoirs',     emoji: '📚', duration: 1800 },
+  { name: 'Prendre sa douche',     emoji: '🚿', duration: 600 },
+  { name: 'Linge dans le panier',  emoji: '🧺', duration: 60 },
+  { name: 'Arroser les plantes',   emoji: '🌿', duration: 300 },
+  { name: 'Sortir la poubelle',    emoji: '🗑️', duration: 120 },
+];
 const TASK_DURATIONS = [
   { value: 60, label: '1 min' }, { value: 120, label: '2 min' },
   { value: 300, label: '5 min' }, { value: 600, label: '10 min' },
@@ -42,6 +57,7 @@ export default function ParentDashboardScreen({ navigation }) {
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
     importState, ratingPromptCount, recordRatingPrompt,
     soundsEnabled, setSoundsEnabled,
+    parentApprovalRequired, setParentApprovalRequired,
   } = useAppStore();
   const profile = useActiveProfile();
   const { saveAndApply } = useNotifications();
@@ -355,6 +371,26 @@ export default function ParentDashboardScreen({ navigation }) {
         </Text>
       </View>
 
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={{ fontSize: 22 }}>👤</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Validation parentale des quêtes</Text>
+            <Text style={styles.cardSub}>
+              À la fin de chaque quête, votre enfant doit vous montrer son travail :
+              vous entrez votre code parent pour valider et débloquer les pièces.
+              Anti-triche et responsabilisation.
+            </Text>
+          </View>
+          <Switch
+            value={!!parentApprovalRequired}
+            onValueChange={setParentApprovalRequired}
+            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+            thumbColor={parentApprovalRequired ? COLORS.primary : '#fff'}
+          />
+        </View>
+      </View>
+
       {Object.values(ROUTINES).map((routine) => {
         const locked = routine.premium && !isPremium;
         const activeTasks = profile.customTasks?.[routine.id] || routine.defaultTasks;
@@ -421,6 +457,25 @@ export default function ParentDashboardScreen({ navigation }) {
 
                 {isAdding ? (
                   <View style={styles.addTaskForm}>
+                    <Text style={[styles.cardSub, { marginBottom: 6 }]}>Idées rapides (un tap pour remplir) :</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={{ flexDirection: 'row', gap: 6, paddingBottom: 4 }}>
+                        {TASK_SUGGESTIONS.map((s) => (
+                          <TouchableOpacity
+                            key={s.name}
+                            style={styles.suggestionChip}
+                            onPress={() => {
+                              setNewTaskName(s.name);
+                              setNewTaskEmoji(s.emoji);
+                              setNewTaskDuration(s.duration);
+                            }}
+                          >
+                            <Text style={{ fontSize: 14 }}>{s.emoji}</Text>
+                            <Text style={styles.suggestionChipText}>{s.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </ScrollView>
                     <Text style={[styles.cardSub, { marginBottom: 6 }]}>Choisir un emoji :</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       <View style={{ flexDirection: 'row', gap: 6, paddingBottom: 4 }}>
@@ -831,6 +886,13 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.primaryLight,
   },
   durationChipText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
+  suggestionChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: COLORS.surface, borderRadius: 16,
+    paddingHorizontal: 10, paddingVertical: 7,
+    borderWidth: 1, borderColor: COLORS.primaryLight,
+  },
+  suggestionChipText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   deleteBtn: { padding: 4 },
   addTaskBtn: {
     marginTop: 10, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.primary,

@@ -1,21 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Animated, Alert,
+  View, Text, TouchableOpacity, StyleSheet, Animated, Alert, Modal, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { COLORS, GRADIENTS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
+import { getShopItemById } from '../constants/shopData';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import { playDing } from '../utils/sounds';
 import BadgeToast from '../components/BadgeToast';
+import CompanionCheer from '../components/CompanionCheer';
 
 export default function QuestScreen({ navigation, route }) {
   const { routineId } = route.params || {};
-  const { earnRewards, completeRoutine, recordTaskDone, checkAndAwardBadges } = useAppStore();
+  const {
+    earnRewards, completeRoutine, recordTaskDone, checkAndAwardBadges,
+    parentApprovalRequired, parentPin,
+  } = useAppStore();
   const profile = useActiveProfile();
+
+  // Compagnon équipé (boutique) qui célèbre chaque tâche — étoile par défaut
+  const companionEmoji =
+    (profile?.equippedItems || [])
+      .map(getShopItemById)
+      .find((i) => i?.category === 'companions')?.emoji || '⭐';
 
   const routine = ROUTINES[routineId];
   // Freeze tasks at mount so profile switches don't break the session.
@@ -32,6 +43,10 @@ export default function QuestScreen({ navigation, route }) {
   const [totalCoins, setTotalCoins] = useState(0);
   const [toastBadge, setToastBadge] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [cheerTrigger, setCheerTrigger] = useState(0);
+  const [approvalVisible, setApprovalVisible] = useState(false);
+  const [approvalPin, setApprovalPin] = useState('');
+  const [approvalError, setApprovalError] = useState('');
 
   const slideY = useRef(new Animated.Value(40)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
@@ -99,16 +114,13 @@ export default function QuestScreen({ navigation, route }) {
     ]).start();
   };
 
-  const handleDone = async () => {
-    if (!currentTask) return;
-    // Anti double-tap : sinon pièces/XP comptées deux fois et index hors limites
-    if (busyRef.current) return;
-    busyRef.current = true;
-
-    if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
+  // Valide la tâche courante et attribue les récompenses.
+  // Pour la dernière tâche, n'est appelé qu'APRÈS validation parentale éventuelle.
+  const grantTask = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     playDing();
     pulseDoneBtn();
+    setCheerTrigger((c) => c + 1);
     recordTaskDone();
 
     const earned = totalCoins + (currentTask.coins || 0);
@@ -138,6 +150,41 @@ export default function QuestScreen({ navigation, route }) {
       setTaskIndex((i) => i + 1);
       busyRef.current = false;
     }
+  };
+
+  const handleDone = () => {
+    if (!currentTask) return;
+    // Anti double-tap : sinon pièces/XP comptées deux fois et index hors limites
+    if (busyRef.current) return;
+    busyRef.current = true;
+
+    if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
+
+    // Anti-triche optionnel : le parent valide la fin de quête avec son code
+    if (isLast && parentApprovalRequired) {
+      setApprovalPin('');
+      setApprovalError('');
+      setApprovalVisible(true);
+      // busyRef reste true tant que la modale est ouverte
+      return;
+    }
+    grantTask();
+  };
+
+  const handleApprovalSubmit = () => {
+    if (approvalPin === String(parentPin)) {
+      setApprovalVisible(false);
+      grantTask();
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setApprovalError('Code incorrect');
+      setApprovalPin('');
+    }
+  };
+
+  const handleApprovalCancel = () => {
+    setApprovalVisible(false);
+    busyRef.current = false;
   };
 
   const handleSkip = () => {
@@ -184,6 +231,7 @@ export default function QuestScreen({ navigation, route }) {
     <LinearGradient colors={gradient} style={styles.gradient}>
       <SafeAreaView style={styles.safe}>
         <BadgeToast badge={toastBadge} visible={toastVisible} onHide={() => setToastVisible(false)} />
+        <CompanionCheer trigger={cheerTrigger} emoji={companionEmoji} />
 
         {/* Top */}
         <View style={styles.topBar}>
@@ -247,6 +295,46 @@ export default function QuestScreen({ navigation, route }) {
             <Text style={styles.skipText}>Passer cette tâche</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Validation parentale de fin de quête (optionnelle, activée par le parent) */}
+        <Modal
+          visible={approvalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={handleApprovalCancel}
+        >
+          <View style={styles.approvalOverlay}>
+            <View style={styles.approvalCard}>
+              <Text style={styles.approvalEmoji}>👤</Text>
+              <Text style={styles.approvalTitle}>Validation parent</Text>
+              <Text style={styles.approvalSub}>
+                Demande à un parent de vérifier ta quête et d'entrer son code !
+              </Text>
+              <TextInput
+                style={styles.approvalInput}
+                value={approvalPin}
+                onChangeText={(t) => { setApprovalPin(t.replace(/\D/g, '').slice(0, 4)); setApprovalError(''); }}
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={4}
+                placeholder="• • • •"
+                placeholderTextColor={COLORS.textMuted}
+                autoFocus
+              />
+              {!!approvalError && <Text style={styles.approvalError}>{approvalError}</Text>}
+              <TouchableOpacity
+                style={[styles.approvalBtn, approvalPin.length < 4 && { opacity: 0.4 }]}
+                onPress={handleApprovalSubmit}
+                disabled={approvalPin.length < 4}
+              >
+                <Text style={styles.approvalBtnText}>Valider la quête ✓</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleApprovalCancel} style={styles.approvalCancel}>
+                <Text style={styles.approvalCancelText}>Plus tard</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -354,4 +442,34 @@ const styles = StyleSheet.create({
 
   doneBtnExpired: { backgroundColor: '#D1FAE5', shadowColor: '#10B981' },
   doneBtnExpiredText: { color: '#065F46' },
+
+  approvalOverlay: {
+    flex: 1, backgroundColor: 'rgba(30,27,75,0.7)',
+    alignItems: 'center', justifyContent: 'center', padding: 28,
+  },
+  approvalCard: {
+    backgroundColor: COLORS.white, borderRadius: 24, padding: 24,
+    alignItems: 'center', width: '100%', maxWidth: 340,
+  },
+  approvalEmoji: { fontSize: 40, marginBottom: 8 },
+  approvalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.textPrimary, marginBottom: 6 },
+  approvalSub: {
+    fontSize: 13, color: COLORS.textSecondary, textAlign: 'center',
+    lineHeight: 19, marginBottom: 16,
+  },
+  approvalInput: {
+    backgroundColor: COLORS.background, borderRadius: 12,
+    borderWidth: 1.5, borderColor: COLORS.border,
+    fontSize: 24, fontWeight: '900', color: COLORS.textPrimary,
+    textAlign: 'center', letterSpacing: 8,
+    paddingVertical: 12, width: 160,
+  },
+  approvalError: { fontSize: 13, color: COLORS.danger, marginTop: 8 },
+  approvalBtn: {
+    backgroundColor: COLORS.primary, borderRadius: 14,
+    paddingVertical: 14, width: '100%', alignItems: 'center', marginTop: 16,
+  },
+  approvalBtnText: { fontSize: 15, fontWeight: '800', color: COLORS.white },
+  approvalCancel: { paddingVertical: 12 },
+  approvalCancelText: { fontSize: 13, color: COLORS.textSecondary },
 });
