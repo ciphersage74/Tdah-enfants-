@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, GRADIENTS } from '../constants/colors';
 
-export default function RoutineCard({ routine, tasksCount, completedCount, isCompleted, isPremium, locked, resting, onPress }) {
+export default function RoutineCard({ routine, tasksCount, completedCount, isCompleted, jokered, isPremium, locked, resting, onPress }) {
   const gradient = GRADIENTS[routine.gradientKey] || GRADIENTS.primary;
   const progress = tasksCount > 0 ? completedCount / tasksCount : 0;
 
@@ -26,7 +26,7 @@ export default function RoutineCard({ routine, tasksCount, completedCount, isCom
               </View>
             ) : isCompleted ? (
               <View style={styles.doneBadge}>
-                <Text style={styles.doneText}>✅ Terminée !</Text>
+                <Text style={styles.doneText}>{jokered ? '🃏 Joker utilisé' : '✅ Terminée !'}</Text>
               </View>
             ) : (
               <Text style={styles.sub}>{tasksCount} missions</Text>

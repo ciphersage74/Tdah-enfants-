@@ -19,21 +19,24 @@ export default function PaywallScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
-    setLoading(true);
     /*
      * IAP Integration point — wire react-native-purchases (RevenueCat) here:
      * const offerings = await Purchases.getOfferings();
      * await Purchases.purchasePackage(selectedPackage);
+     * unlockPremium() only after successful purchase confirmation.
      */
-    setTimeout(() => {
-      setLoading(false);
-      unlockPremium();
-      Alert.alert(
-        '🎉 Bienvenue dans Premium !',
-        'Toutes les fonctionnalités sont maintenant débloquées.',
-        [{ text: 'Parfait !', onPress: () => navigation.navigate('Home') }]
-      );
-    }, 1200);
+    Alert.alert(
+      '🚀 Bientôt disponible',
+      'Le paiement sécurisé sera activé lors du lancement sur le Play Store.\n\nEn attendant, le bouton "mode test développeur" en bas de l\'écran débloque les fonctionnalités Premium.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleDevUnlock = () => {
+    unlockPremium();
+    Alert.alert('🔧 Mode dev', 'Premium débloqué pour les tests.', [
+      { text: 'OK', onPress: () => navigation.navigate('Home') },
+    ]);
   };
 
   const handleRestore = () => {
@@ -102,16 +105,14 @@ export default function PaywallScreen({ navigation }) {
         </View>
 
         {/* CTA */}
-        <TouchableOpacity
-          style={[styles.ctaBtn, loading && styles.ctaBtnLoading]}
-          onPress={handleSubscribe}
-          disabled={loading}
-        >
+        <TouchableOpacity style={styles.ctaBtn} onPress={handleSubscribe}>
           <LinearGradient colors={GRADIENTS.premium} style={styles.ctaGradient}>
-            <Text style={styles.ctaText}>
-              {loading ? 'Traitement...' : '🚀 Commencer mon essai gratuit 7 jours'}
-            </Text>
+            <Text style={styles.ctaText}>🚀 Commencer mon essai gratuit 7 jours</Text>
           </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleDevUnlock} style={styles.devBtn}>
+          <Text style={styles.devBtnText}>🔧 Débloquer (mode test développeur)</Text>
         </TouchableOpacity>
 
         <Text style={styles.legalText}>
@@ -253,4 +254,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   restoreText: { fontSize: 13, color: COLORS.textSecondary, textDecorationLine: 'underline' },
+  devBtn: { alignItems: 'center', paddingVertical: 8, marginTop: 4 },
+  devBtnText: { fontSize: 11, color: COLORS.textMuted },
 });

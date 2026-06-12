@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
@@ -15,7 +15,10 @@ const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 const MONTHS_FR = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'aoû', 'sep', 'oct', 'nov', 'déc'];
 
 export default function HomeScreen({ navigation }) {
-  const { isPremium, isRoutineCompletedToday, restDays } = useAppStore();
+  const {
+    isPremium, isRoutineCompletedToday, isRoutineJokeredToday, restDays,
+    getJokersLeft, useJoker,
+  } = useAppStore();
   const profile = useActiveProfile();
   const [toastBadge, setToastBadge] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -29,6 +32,34 @@ export default function HomeScreen({ navigation }) {
   const morningDone = isRoutineCompletedToday('morning');
   const eveningDone = isRoutineCompletedToday('evening');
   const isRestDay = (restDays || []).includes(now.getDay());
+
+  const jokersLeft = getJokersLeft();
+  const jokerTargets = [];
+  if (!morningDone) jokerTargets.push({ id: 'morning', label: '☀️ Quête du matin' });
+  if (isPremium && !eveningDone) jokerTargets.push({ id: 'evening', label: '🌙 Quête du soir' });
+  const showJoker = !isRestDay && jokersLeft > 0 && jokerTargets.length > 0;
+
+  const confirmJoker = (routineId, label) => {
+    Alert.alert(
+      '🃏 Utiliser un joker ?',
+      `La ${label.slice(3).toLowerCase()} sera marquée comme passée.\n\nTa série de jours continue, mais tu ne gagnes pas de pièces. C'est OK, tout le monde a des jours difficiles !`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Utiliser mon joker', onPress: () => useJoker(routineId) },
+      ]
+    );
+  };
+
+  const handleJokerPress = () => {
+    if (jokerTargets.length === 1) {
+      confirmJoker(jokerTargets[0].id, jokerTargets[0].label);
+    } else {
+      Alert.alert('🃏 Joker', 'Pour quelle quête ?', [
+        ...jokerTargets.map((t) => ({ text: t.label, onPress: () => confirmJoker(t.id, t.label) })),
+        { text: 'Annuler', style: 'cancel' },
+      ]);
+    }
+  };
 
   const handleRoutinePress = (routineId) => {
     const routine = ROUTINES[routineId];
@@ -116,6 +147,7 @@ export default function HomeScreen({ navigation }) {
           tasksCount={(profile.customTasks?.morning || ROUTINES.morning.defaultTasks).length}
           completedCount={morningDone ? (profile.customTasks?.morning || ROUTINES.morning.defaultTasks).length : 0}
           isCompleted={morningDone}
+          jokered={isRoutineJokeredToday('morning')}
           locked={false}
           resting={isRestDay}
           onPress={() => handleRoutinePress('morning')}
@@ -125,10 +157,25 @@ export default function HomeScreen({ navigation }) {
           tasksCount={(profile.customTasks?.evening || ROUTINES.evening.defaultTasks).length}
           completedCount={eveningDone ? (profile.customTasks?.evening || ROUTINES.evening.defaultTasks).length : 0}
           isCompleted={eveningDone}
+          jokered={isRoutineJokeredToday('evening')}
           locked={!isPremium}
           resting={isRestDay}
           onPress={() => handleRoutinePress('evening')}
         />
+
+        {/* Joker anti-frustration */}
+        {showJoker && (
+          <TouchableOpacity style={styles.jokerBtn} onPress={handleJokerPress}>
+            <Text style={styles.jokerEmoji}>🃏</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.jokerTitle}>Journée difficile ?</Text>
+              <Text style={styles.jokerSub}>
+                Utilise un joker pour passer une quête sans casser ta série
+                ({jokersLeft} restant{jokersLeft > 1 ? 's' : ''} cette semaine)
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Status */}
         <View style={[styles.statusBox, isRestDay && styles.statusBoxRest]}>
@@ -193,6 +240,14 @@ const styles = StyleSheet.create({
   actionBadgeText: { fontSize: 9, fontWeight: '900', color: COLORS.white },
 
   todayLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  jokerBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFFBEB', borderRadius: 14, padding: 14,
+    borderWidth: 1.5, borderColor: '#FDE68A', borderStyle: 'dashed',
+  },
+  jokerEmoji: { fontSize: 28 },
+  jokerTitle: { fontSize: 14, fontWeight: '800', color: '#B45309' },
+  jokerSub: { fontSize: 12, color: '#92400E', lineHeight: 16, marginTop: 2 },
   statusBox: { backgroundColor: COLORS.surface, borderRadius: 14, padding: 14 },
   statusBoxRest: { backgroundColor: '#D1FAE5' },
   statusText: { fontSize: 14, color: COLORS.primary, fontWeight: '600', lineHeight: 20 },

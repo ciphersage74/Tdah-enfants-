@@ -34,6 +34,37 @@ const defaultState = {
   notifMorningTime: '07:30',
   notifEveningTime: '18:30',
   restDays: [],
+  jokersUsedDates: [],
+  moodLog: {},
+};
+
+const JOKERS_PER_WEEK = 2;
+
+// Monday 00:00 of the current week
+const getWeekStart = () => {
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+// Cleans up loaded data: stale streaks and shop items that no longer exist
+const normalizeState = (data) => {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const next = { ...data };
+  // A streak is only alive if the last completion was today or yesterday
+  if (next.lastCompletedDate && next.lastCompletedDate < yesterday && next.lastCompletedDate !== today) {
+    next.streak = 0;
+  }
+  if (Array.isArray(next.unlockedItems)) {
+    next.unlockedItems = next.unlockedItems.filter((id) => !!getShopItemById(id));
+  }
+  if (Array.isArray(next.equippedItems)) {
+    next.equippedItems = next.equippedItems.filter((id) => !!getShopItemById(id));
+  }
+  return next;
 };
 
 const save = async (state) => {
@@ -52,7 +83,9 @@ export const useAppStore = create((set, get) => ({
       // Check v3 (current flat format)
       const rawV3 = await AsyncStorage.getItem(STORAGE_KEY);
       if (rawV3) {
-        set({ ...JSON.parse(rawV3), isParentMode: false });
+        const normalized = normalizeState({ ...defaultState, ...JSON.parse(rawV3) });
+        set({ ...normalized, isParentMode: false });
+        save(normalized);
         return;
       }
       // Migrate from v2 (profiles[])
@@ -154,6 +187,58 @@ export const useAppStore = create((set, get) => ({
     return !!get().history?.[today]?.[routineId]?.completed;
   },
 
+  isRoutineJokeredToday: (routineId) => {
+    const today = new Date().toISOString().split('T')[0];
+    return !!get().history?.[today]?.[routineId]?.jokered;
+  },
+
+  // ─── Jokers (anti-frustration) ────────────────────────────────
+  getJokersLeft: () => {
+    const weekStart = getWeekStart();
+    const used = (get().jokersUsedDates || []).filter((d) => new Date(d) >= weekStart).length;
+    return Math.max(0, JOKERS_PER_WEEK - used);
+  },
+
+  // Marks the routine as passed without rewards; the streak survives.
+  useJoker: (routineId) => {
+    const s = get();
+    const today = new Date().toISOString().split('T')[0];
+    if (s.history?.[today]?.[routineId]?.completed) return false;
+    const weekStart = getWeekStart();
+    const used = (s.jokersUsedDates || []).filter((d) => new Date(d) >= weekStart).length;
+    if (used >= JOKERS_PER_WEEK) return false;
+
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const history = { ...s.history };
+    if (!history[today]) history[today] = {};
+    history[today][routineId] = { completed: true, jokered: true, completedAt: new Date().toISOString() };
+    const streak =
+      s.lastCompletedDate === yesterday ? s.streak + 1
+      : s.lastCompletedDate === today ? s.streak
+      : 1;
+    const next = {
+      ...s, history, streak, lastCompletedDate: today,
+      jokersUsedDates: [...(s.jokersUsedDates || []), today],
+    };
+    set(next);
+    save(next);
+    return true;
+  },
+
+  // ─── Météo des émotions ───────────────────────────────────────
+  recordMood: (mood) => {
+    const s = get();
+    const today = new Date().toISOString().split('T')[0];
+    const next = { ...s, moodLog: { ...(s.moodLog || {}), [today]: mood } };
+    set(next);
+    save(next);
+  },
+
+  hasMoodToday: () => {
+    const today = new Date().toISOString().split('T')[0];
+    return !!get().moodLog?.[today];
+  },
+
   // ─── Badges ───────────────────────────────────────────────────
   checkAndAwardBadges: () => {
     const s = get();
@@ -184,10 +269,10 @@ export const useAppStore = create((set, get) => ({
     if (equipped.includes(itemId)) {
       equipped = equipped.filter((i) => i !== itemId);
     } else {
-      // One item per position slot
+      // One item per category slot (hat / weapon / magic / companion)
       equipped = equipped.filter((i) => {
         const existing = getShopItemById(i);
-        return existing?.position !== item.position;
+        return existing && existing.category !== item.category;
       });
       equipped.push(itemId);
     }
@@ -285,7 +370,7 @@ export const useAppStore = create((set, get) => ({
 
   // ─── Stats ────────────────────────────────────────────────────
   getWeeklyStats: () => {
-    const { history, isPremium } = get();
+    const { history, moodLog } = get();
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
@@ -293,6 +378,9 @@ export const useAppStore = create((set, get) => ({
         date: d,
         morning: !!history?.[d]?.morning?.completed,
         evening: !!history?.[d]?.evening?.completed,
+        morningJokered: !!history?.[d]?.morning?.jokered,
+        eveningJokered: !!history?.[d]?.evening?.jokered,
+        mood: moodLog?.[d] || null,
       });
     }
     const done = days.filter((d) => d.morning || d.evening).length;

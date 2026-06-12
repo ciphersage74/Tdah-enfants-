@@ -63,3 +63,16 @@ export const AVATAR_LABELS = {
   princess: 'Princesse', fairy: 'Fée', mermaid: 'Sirène', witch: 'Sorcière',
   hero: 'Héros', wizard: 'Sorcier', fox: 'Renard',
 };
+
+// Fine-tuning offsets (pixels) for item layers per character.
+// Adjust visually after first build: negative = up/left, positive = down/right.
+export const AVATAR_ANCHORS = {
+  superhero: { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  dragon:    { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  ninja:     { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  astronaut: { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  princess:  { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  fairy:     { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  mermaid:   { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  witch:     { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+};

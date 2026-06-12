@@ -23,8 +23,7 @@ export const SHOP_ITEMS = [
   { id: 'sword',      label: 'Épée légendaire',    emoji: '⚔️', price: 140, position: 'right', category: 'weapons',    requiredLevel: 3 },
   { id: 'bow',        label: 'Arc elfique',         emoji: '🏹', price: 160, position: 'right', category: 'weapons',    requiredLevel: 4 },
   { id: 'axe',        label: 'Hache de guerre',    emoji: '🪓', price: 170, position: 'right', category: 'weapons',    requiredLevel: 4 },
-  { id: 'hammer',     label: 'Marteau de Thor',    emoji: '🔨', price: 200, position: 'right', category: 'weapons',    requiredLevel: 5 },
-  { id: 'trident',    label: 'Trident du roi',     emoji: '🔱', price: 240, position: 'right', category: 'weapons',    requiredLevel: 6 },
+  { id: 'trident',    label: 'Trident du roi',     emoji: '🔱', price: 240, position: 'right', category: 'weapons',    requiredLevel: 5 },
   { id: 'lightsaber', label: 'Sabre laser',        emoji: '🗡️', price: 280, position: 'right', category: 'weapons',    requiredLevel: 7 },
 
   // ─── Magie ───────────────────────────────────────────────────

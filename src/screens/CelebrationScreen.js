@@ -1,9 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { COLORS, GRADIENTS } from '../constants/colors';
+import { MOODS } from '../constants/moodData';
+import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import HeroAvatar from '../components/HeroAvatar';
 
@@ -47,6 +49,9 @@ function Confetti() {
 export default function CelebrationScreen({ navigation, route }) {
   const { coinsEarned, leveledUp, newLevel, newBadges = [], routineId } = route.params;
   const profile = useActiveProfile();
+  const { recordMood, hasMoodToday } = useAppStore();
+  const [askMood] = useState(() => !hasMoodToday());
+  const [pickedMood, setPickedMood] = useState(null);
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -58,7 +63,15 @@ export default function CelebrationScreen({ navigation, route }) {
     ]).start();
   }, []);
 
+  const handlePickMood = (moodId) => {
+    if (pickedMood) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPickedMood(moodId);
+    recordMood(moodId);
+  };
+
   const routineName = { morning: 'du Matin', evening: 'du Soir' }[routineId] || '';
+  const moodQuestion = routineId === 'evening' ? 'Comment tu te sens ce soir ?' : 'Comment tu te sens ?';
 
   return (
     <LinearGradient colors={GRADIENTS.celebration} style={{ flex: 1 }}>
@@ -99,6 +112,32 @@ export default function CelebrationScreen({ navigation, route }) {
                     <Text style={styles.badgePillLabel}>{b.label}</Text>
                   </View>
                 ))}
+              </View>
+            </View>
+          )}
+
+          {/* Météo des émotions — une fois par jour */}
+          {askMood && (
+            <View style={styles.moodBox}>
+              <Text style={styles.moodTitle}>
+                {pickedMood ? 'Merci ! 💜' : moodQuestion}
+              </Text>
+              <View style={styles.moodRow}>
+                {MOODS.map((m) => {
+                  const selected = pickedMood === m.id;
+                  const dimmed = pickedMood && !selected;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[styles.moodBtn, selected && styles.moodBtnSelected, dimmed && { opacity: 0.3 }]}
+                      onPress={() => handlePickMood(m.id)}
+                      disabled={!!pickedMood}
+                    >
+                      <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                      <Text style={styles.moodLabel}>{m.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -150,6 +189,29 @@ const styles = StyleSheet.create({
   },
   badgePillEmoji: { fontSize: 18 },
   badgePillLabel: { fontSize: 13, color: COLORS.white, fontWeight: '700' },
+  moodBox: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    padding: 14,
+    width: '100%',
+    gap: 10,
+    marginTop: 4,
+  },
+  moodTitle: { fontSize: 15, fontWeight: '800', color: COLORS.white, textAlign: 'center' },
+  moodRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
+  moodBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: 'center',
+    gap: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  moodBtnSelected: { borderColor: COLORS.white, backgroundColor: 'rgba(255,255,255,0.35)' },
+  moodEmoji: { fontSize: 30 },
+  moodLabel: { fontSize: 11, fontWeight: '700', color: COLORS.white },
   continueBtn: {
     backgroundColor: COLORS.white,
     borderRadius: 18,

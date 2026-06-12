@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useAppStore } from '../store/useAppStore';
 
@@ -10,11 +11,23 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const ensureAndroidChannel = async () => {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync('default', {
+    name: 'Rappels de routines',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'default',
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#6C3AE8',
+  });
+};
+
 export const useNotifications = () => {
   const { notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime, updateNotifSettings } =
     useAppStore();
 
   const requestPermissions = async () => {
+    await ensureAndroidChannel();
     const { status } = await Notifications.requestPermissionsAsync();
     return status === 'granted';
   };
@@ -38,6 +51,7 @@ export const useNotifications = () => {
   };
 
   const applySchedule = async (settings = {}) => {
+    await ensureAndroidChannel();
     const morning = settings.notifMorningEnabled ?? notifMorningEnabled;
     const evening = settings.notifEveningEnabled ?? notifEveningEnabled;
     const morningTime = settings.notifMorningTime ?? notifMorningTime;
