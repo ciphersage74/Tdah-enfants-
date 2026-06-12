@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FocusHéros — Aperçu complet de l'application</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F3FF; color: #1E1B4B; }
+
+  /* Cover */
+  .cover { background: linear-gradient(135deg, #6C3AE8, #4C1D95); color: white; padding: 80px 60px; page-break-after: always; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; }
+  .cover-logo { width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 3px solid rgba(255,255,255,0.35); border-radius: 60px; display: flex; align-items: center; justify-content: center; font-size: 60px; margin-bottom: 36px; }
+  .cover-title { font-size: 52px; font-weight: 900; letter-spacing: 1px; margin-bottom: 12px; }
+  .cover-sub { font-size: 22px; color: rgba(255,255,255,0.8); margin-bottom: 48px; }
+  .cover-meta { display: flex; gap: 32px; flex-wrap: wrap; }
+  .cover-chip { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 10px 18px; font-size: 14px; font-weight: 600; }
+
+  /* Page layouts */
+  .page { padding: 48px 60px; page-break-after: always; }
+  .page-title { font-size: 32px; font-weight: 900; color: #6C3AE8; margin-bottom: 6px; }
+  .page-desc { font-size: 14px; color: #6B7280; margin-bottom: 32px; border-bottom: 2px solid #EDE9FE; padding-bottom: 12px; }
+
+  /* Phone mockup */
+  .phones-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .phone { width: 220px; flex-shrink: 0; }
+  .phone-frame { background: #1E1B4B; border-radius: 36px; padding: 10px; box-shadow: 0 20px 60px rgba(108,58,232,0.3); position: relative; }
+  .phone-notch { width: 70px; height: 20px; background: #1E1B4B; border-radius: 0 0 14px 14px; margin: 0 auto 8px; position: relative; z-index: 1; }
+  .phone-screen { border-radius: 28px; overflow: hidden; min-height: 400px; position: relative; }
+  .phone-label { text-align: center; font-size: 12px; font-weight: 700; color: #6C3AE8; margin-top: 12px; }
+
+  /* Screen content */
+  .s-splash { background: linear-gradient(160deg, #6C3AE8, #4C1D95); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; padding: 24px; }
+  .s-home { background: #F5F3FF; min-height: 400px; padding: 0; }
+  .s-quest { background: linear-gradient(160deg, #F97316, #FBBF24); min-height: 400px; padding: 0; }
+  .s-quest-eve { background: linear-gradient(160deg, #3B82F6, #6366F1); min-height: 400px; }
+  .s-celeb { background: linear-gradient(160deg, #6C3AE8, #EC4899); min-height: 400px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  .s-parent { background: #F5F3FF; min-height: 400px; }
+  .s-paywall { background: #F5F3FF; min-height: 400px; }
+  .s-onboard { background: linear-gradient(160deg, #6C3AE8, #4C1D95); min-height: 400px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .s-shop { background: #F5F3FF; min-height: 400px; }
+  .s-badges { background: #F5F3FF; min-height: 400px; }
+
+  /* UI elements */
+  .ui-bar { background: linear-gradient(90deg, #6C3AE8, #8B5CF6); height: 6px; border-radius: 3px; }
+  .ui-card { background: white; border-radius: 16px; padding: 10px 12px; margin: 6px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .ui-header { background: white; padding: 10px 12px; margin: 6px 8px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .ui-hero-row { display: flex; align-items: center; gap: 8px; }
+  .ui-avatar { width: 44px; height: 44px; border-radius: 22px; background: linear-gradient(135deg, #6C3AE8, #8B5CF6); display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; flex-shrink: 0; border: 2px solid #6C3AE8; }
+  .ui-name { font-size: 13px; font-weight: 900; color: #1E1B4B; }
+  .ui-coins { background: #FEF3C7; border-radius: 10px; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #B45309; margin-left: auto; }
+  .ui-xp-bar { height: 6px; background: #EDE9FE; border-radius: 3px; margin-top: 4px; overflow: hidden; }
+  .ui-xp-fill { height: 100%; background: linear-gradient(90deg, #6C3AE8, #8B5CF6); border-radius: 3px; }
+  .ui-msg { background: #EDE9FE; border-radius: 8px; padding: 5px 8px; font-size: 9px; color: #6C3AE8; font-weight: 600; margin-top: 4px; }
+  .ui-streak { background: #FEF3C7; border-radius: 8px; padding: 3px 8px; font-size: 9px; font-weight: 700; color: #B45309; display: inline-block; margin-top: 3px; }
+  .ui-actions { display: flex; gap: 5px; margin: 4px 8px; }
+  .ui-action { flex: 1; background: white; border-radius: 10px; padding: 7px 4px; text-align: center; font-size: 14px; border: 1.5px solid transparent; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .ui-action-label { font-size: 8px; font-weight: 700; color: #6B7280; display: block; }
+  .ui-routine { background: white; border-radius: 12px; margin: 4px 8px; padding: 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .ui-routine-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .ui-routine-morning { background: linear-gradient(135deg, #F97316, #FBBF24); }
+  .ui-routine-evening { background: linear-gradient(135deg, #3B82F6, #6366F1); opacity: 0.5; }
+  .ui-routine-info { flex: 1; }
+  .ui-routine-title { font-size: 11px; font-weight: 800; color: #1E1B4B; }
+  .ui-routine-sub { font-size: 9px; color: #6B7280; }
+  .ui-routine-arrow { font-size: 14px; color: #9CA3AF; }
+  .ui-parent-btn { background: white; border: 1px solid #E5E7EB; border-radius: 10px; padding: 8px; text-align: center; margin: 4px 8px; font-size: 9px; font-weight: 600; color: #6B7280; }
+  .ui-status { background: #EDE9FE; border-radius: 10px; padding: 8px; margin: 4px 8px; font-size: 9px; color: #6C3AE8; font-weight: 600; }
+
+  /* Quest screen */
+  .q-top { display: flex; align-items: center; padding: 10px 12px; gap: 8px; }
+  .q-close { width: 26px; height: 26px; border-radius: 13px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+  .q-progress { flex: 1; }
+  .q-prog-track { height: 5px; background: rgba(255,255,255,0.25); border-radius: 3px; overflow: hidden; }
+  .q-prog-fill { height: 100%; background: white; border-radius: 3px; }
+  .q-prog-label { font-size: 8px; color: rgba(255,255,255,0.8); font-weight: 600; text-align: right; margin-top: 2px; }
+  .q-coin { background: rgba(255,255,255,0.2); border-radius: 8px; padding: 3px 7px; font-size: 9px; color: white; font-weight: 700; }
+  .q-task { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 16px 12px; }
+  .q-emoji { font-size: 64px; margin-bottom: 12px; }
+  .q-name { font-size: 17px; font-weight: 900; color: white; text-align: center; line-height: 1.2; margin-bottom: 14px; }
+  .q-timer { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.5); border-radius: 14px; padding: 10px 20px; text-align: center; }
+  .q-timer-text { font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 600; }
+  .q-timer-icon { font-size: 18px; }
+  .q-done { background: white; border-radius: 14px; padding: 12px; margin: 8px 10px; text-align: center; font-size: 11px; font-weight: 900; color: #6C3AE8; }
+  .q-skip { text-align: center; padding: 6px; font-size: 9px; color: rgba(255,255,255,0.6); }
+  .q-elastic { background: rgba(16,185,129,0.35); border-radius: 10px; padding: 5px 10px; margin: 2px 8px; font-size: 8px; color: white; font-weight: 700; }
+
+  /* Celebration */
+  .cel-congrats { font-size: 26px; font-weight: 900; color: white; text-align: center; }
+  .cel-avatar { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 35px; border: 3px solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 10px auto; }
+  .cel-name { font-size: 18px; font-weight: 900; color: white; text-align: center; }
+  .cel-coins { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0; }
+  .cel-coin-num { font-size: 30px; font-weight: 900; color: #FFB800; }
+  .cel-badge-box { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 8px 10px; margin: 4px 0; width: 100%; }
+  .cel-mood { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 8px 10px; margin: 4px 0; width: 100%; }
+  .cel-continue { background: white; border-radius: 14px; padding: 12px; width: 100%; text-align: center; font-size: 12px; font-weight: 900; color: #6C3AE8; margin-top: auto; }
+
+  /* Parent dashboard */
+  .pd-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #E5E7EB; }
+  .pd-title { font-size: 13px; font-weight: 900; color: #1E1B4B; }
+  .pd-close { font-size: 9px; color: #6B7280; font-weight: 600; }
+  .pd-tabs { display: flex; gap: 4px; padding: 6px 8px; overflow: hidden; }
+  .pd-tab { background: white; border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 4px 8px; font-size: 8px; font-weight: 700; color: #6B7280; white-space: nowrap; }
+  .pd-tab-active { background: #6C3AE8; border-color: #6C3AE8; color: white; }
+  .pd-card { background: white; border-radius: 12px; margin: 4px 8px; padding: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .pd-stat { font-size: 28px; font-weight: 900; color: #6C3AE8; text-align: center; }
+  .pd-week { display: flex; justify-content: space-between; padding: 6px 0; }
+  .pd-day { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .pd-dot { width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+  .pd-done { background: #D1FAE5; }
+  .pd-empty { background: #E5E7EB; }
+  .pd-task-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-top: 1px solid #F3F4F6; }
+  .pd-task-name { flex: 1; font-size: 9px; color: #1E1B4B; font-weight: 500; }
+  .pd-dur-chip { background: #EDE9FE; border-radius: 6px; padding: 2px 5px; font-size: 8px; color: #6C3AE8; font-weight: 700; }
+  .pd-switch { width: 28px; height: 15px; background: #6C3AE8; border-radius: 8px; position: relative; }
+  .pd-switch-thumb { width: 11px; height: 11px; background: white; border-radius: 6px; position: absolute; right: 2px; top: 2px; }
+  .pd-endtime { background: #F0FDF4; border-radius: 8px; padding: 6px 8px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .pd-endtime-label { flex: 1; font-size: 8px; font-weight: 700; color: #065F46; }
+  .pd-endtime-input { background: white; border: 1px solid #A7F3D0; border-radius: 6px; padding: 2px 6px; font-size: 10px; font-weight: 800; color: #1E1B4B; width: 44px; text-align: center; }
+  .pd-approval { display: flex; align-items: center; gap: 6px; padding: 6px 0; }
+  .pd-approval-info { flex: 1; }
+  .pd-approval-title { font-size: 9px; font-weight: 800; color: #1E1B4B; }
+  .pd-approval-sub { font-size: 8px; color: #6B7280; }
+
+  /* Paywall */
+  .pw-hero { background: linear-gradient(135deg, #F97316, #EF4444); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  .pw-hero-emoji { font-size: 32px; margin-bottom: 6px; }
+  .pw-hero-title { font-size: 14px; font-weight: 900; color: white; text-align: center; }
+  .pw-features { padding: 8px; }
+  .pw-feat { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+  .pw-feat-icon { width: 26px; height: 26px; background: #EDE9FE; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .pw-feat-title { font-size: 9px; font-weight: 800; color: #1E1B4B; }
+  .pw-plans { display: flex; gap: 5px; padding: 0 8px; margin-bottom: 6px; }
+  .pw-plan { flex: 1; background: white; border: 2px solid #E5E7EB; border-radius: 10px; padding: 7px 5px; text-align: center; }
+  .pw-plan-sel { border-color: #F97316; background: #FFF7ED; }
+  .pw-plan-price { font-size: 13px; font-weight: 900; color: #1E1B4B; }
+  .pw-cta { background: linear-gradient(90deg, #F97316, #EF4444); border-radius: 12px; padding: 10px; margin: 0 8px; text-align: center; font-size: 10px; font-weight: 900; color: white; }
+  .pw-timeline { background: white; border-radius: 12px; margin: 4px 8px; padding: 8px; }
+  .pw-tl-row { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 4px; }
+  .pw-tl-dot { width: 22px; height: 22px; background: #EDE9FE; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .pw-tl-day { font-size: 9px; font-weight: 800; color: #1E1B4B; }
+  .pw-tl-desc { font-size: 8px; color: #6B7280; }
+
+  /* Shop */
+  .sh-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 6px 8px; }
+  .sh-item { background: white; border-radius: 10px; padding: 7px; text-align: center; border: 1.5px solid #E5E7EB; }
+  .sh-item-owned { border-color: #6C3AE8; background: #F5F3FF; }
+  .sh-emoji { font-size: 22px; display: block; }
+  .sh-name { font-size: 8px; font-weight: 700; color: #1E1B4B; margin-top: 2px; }
+  .sh-price { font-size: 8px; color: #6B7280; }
+  .sh-price-owned { font-size: 8px; color: #6C3AE8; font-weight: 700; }
+
+  /* Badges */
+  .bg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 6px 8px; }
+  .bg-item { background: white; border-radius: 10px; padding: 7px; text-align: center; }
+  .bg-item-locked { opacity: 0.35; }
+  .bg-emoji { font-size: 24px; display: block; }
+  .bg-name { font-size: 8px; font-weight: 800; color: #1E1B4B; margin-top: 2px; }
+  .bg-desc { font-size: 7px; color: #6B7280; }
+
+  /* Onboarding */
+  .ob-step { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px; }
+  .ob-emoji { font-size: 52px; margin-bottom: 12px; }
+  .ob-title { font-size: 18px; font-weight: 900; color: white; margin-bottom: 6px; }
+  .ob-sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 16px; line-height: 1.5; }
+  .ob-input { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 12px; padding: 10px 16px; width: 100%; color: white; font-size: 14px; text-align: center; margin-bottom: 10px; }
+  .ob-btn { background: white; border-radius: 12px; padding: 12px 24px; font-size: 12px; font-weight: 900; color: #6C3AE8; width: 100%; text-align: center; }
+  .ob-dots { display: flex; gap: 5px; justify-content: center; margin-bottom: 16px; }
+  .ob-dot { width: 8px; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.3); }
+  .ob-dot-active { background: white; width: 20px; }
+
+  /* Splash */
+  .sp-halo { width: 120px; height: 120px; border-radius: 60px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; position: relative; }
+  .sp-logo { width: 90px; height: 90px; border-radius: 45px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.35); display: flex; align-items: center; justify-content: center; font-size: 44px; }
+  .sp-title { font-size: 24px; font-weight: 900; color: white; text-align: center; margin-bottom: 6px; }
+  .sp-tagline { font-size: 12px; color: rgba(255,255,255,0.7); text-align: center; }
+
+  /* Approval modal */
+  .app-overlay { background: rgba(30,27,75,0.7); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .app-card { background: white; border-radius: 20px; padding: 18px; text-align: center; width: 100%; }
+  .app-title { font-size: 13px; font-weight: 900; color: #1E1B4B; margin-bottom: 6px; }
+  .app-sub { font-size: 9px; color: #6B7280; margin-bottom: 10px; line-height: 1.4; }
+  .app-input { background: #F5F3FF; border: 1.5px solid #E5E7EB; border-radius: 10px; padding: 8px; width: 100px; margin: 0 auto 10px; font-size: 18px; font-weight: 900; color: #1E1B4B; text-align: center; letter-spacing: 8px; display: block; }
+  .app-btn { background: #6C3AE8; border-radius: 10px; padding: 9px; text-align: center; font-size: 10px; font-weight: 800; color: white; margin-bottom: 6px; }
+  .app-cancel { font-size: 9px; color: #6B7280; text-align: center; }
+
+  /* Feature list section */
+  .feat-section { padding: 48px 60px; page-break-before: always; }
+  .feat-title { font-size: 28px; font-weight: 900; color: #6C3AE8; margin-bottom: 8px; }
+  .feat-desc { font-size: 13px; color: #6B7280; margin-bottom: 32px; border-bottom: 2px solid #EDE9FE; padding-bottom: 12px; }
+  .feat-category { margin-bottom: 32px; }
+  .feat-cat-title { font-size: 18px; font-weight: 900; color: #1E1B4B; margin-bottom: 4px; padding: 10px 0 8px; border-bottom: 1px solid #EDE9FE; display: flex; align-items: center; gap: 8px; }
+  .feat-cat-emoji { font-size: 22px; }
+  .feat-item { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid #F3F4F6; }
+  .feat-item:last-child { border-bottom: none; }
+  .feat-item-left { width: 220px; flex-shrink: 0; }
+  .feat-item-name { font-size: 14px; font-weight: 800; color: #1E1B4B; margin-bottom: 3px; }
+  .feat-item-badge { display: inline-block; background: #6C3AE8; color: white; font-size: 9px; font-weight: 700; border-radius: 6px; padding: 1px 6px; margin-bottom: 4px; }
+  .feat-item-badge.green { background: #10B981; }
+  .feat-item-badge.orange { background: #F97316; }
+  .feat-item-badge.gold { background: #D97706; }
+  .feat-item-right { flex: 1; }
+  .feat-item-why { font-size: 13px; color: #374151; line-height: 1.6; }
+  .feat-item-why b { color: #6C3AE8; }
+  .feat-item-tech { font-size: 11px; color: #9CA3AF; margin-top: 4px; font-style: italic; }
+
+  /* Status badge */
+  .status-grid { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+  .status-card { background: white; border-radius: 14px; padding: 14px 18px; flex: 1; min-width: 140px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .status-num { font-size: 28px; font-weight: 900; color: #6C3AE8; }
+  .status-label { font-size: 12px; color: #6B7280; font-weight: 600; }
+
+  /* Print */
+  @media print {
+    .page, .feat-section, .cover { page-break-after: always; }
+    body { background: white; }
+    .phone-frame { box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  }
+  @page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-logo">⭐</div>
+  <div class="cover-title">FocusHéros</div>
+  <div class="cover-sub">Application mobile de gamification pour enfants TDAH</div>
+  <div style="color:rgba(255,255,255,0.6); font-size:13px; margin-bottom:40px;">
+    Rapport de présentation — Juin 2026 · Version production
+  </div>
+  <div class="cover-meta">
+    <div class="cover-chip">📱 React Native + Expo SDK 51</div>
+    <div class="cover-chip">🎮 100% hors ligne — données locales</div>
+    <div class="cover-chip">🧒 Cible : enfants 6–14 ans TDAH</div>
+    <div class="cover-chip">🔒 Zéro collecte de données</div>
+    <div class="cover-chip">🌙 Routine du matin gratuite</div>
+    <div class="cover-chip">⭐ Premium : routine du soir + rapports</div>
+  </div>
+  <div style="margin-top:60px; color:rgba(255,255,255,0.4); font-size:12px;">
+    com.focusheros.app · Play Store Android
+  </div>
+</div>
+
+<!-- PAGE 1 — Écrans principaux enfant -->
+<div class="page">
+  <div class="page-title">Écrans de l'enfant</div>
+  <div class="page-desc">Écrans conçus pour être simples, colorés et motivants. Aucun texte complexe. Tout se comprend en un coup d'œil.</div>
+
+  <div class="phones-row">
+
+    <!-- SPLASH -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-splash">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+            <div class="sp-halo">
+              <div class="sp-logo">⭐</div>
+            </div>
+            <div class="sp-title">FocusHéros</div>
+            <div class="sp-tagline">Chaque jour, une nouvelle victoire</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Écran d'accueil<br><span style="color:#9CA3AF;font-weight:400">Intro animée au lancement</span></div>
+    </div>
+
+    <!-- ONBOARDING -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-onboard">
+          <div class="ob-step">
+            <div class="ob-dots">
+              <div class="ob-dot ob-dot-active"></div>
+              <div class="ob-dot"></div>
+              <div class="ob-dot"></div>
+              <div class="ob-dot"></div>
+              <div class="ob-dot"></div>
+              <div class="ob-dot"></div>
+            </div>
+            <div class="ob-emoji">👋</div>
+            <div class="ob-title">Bienvenue !</div>
+            <div class="ob-sub">Comment s'appelle ton héros ?</div>
+            <div class="ob-input">Lucas</div>
+            <div class="ob-btn">Suivant →</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Onboarding (étape 1/6)<br><span style="color:#9CA3AF;font-weight:400">Prénom · Genre · Âge · Avatar · Code</span></div>
+    </div>
+
+    <!-- HOME -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-home">
+          <div style="padding-top:4px;">
+            <div class="ui-header">
+              <div class="ui-hero-row">
+                <div class="ui-avatar">🦸</div>
+                <div style="flex:1">
+                  <div style="font-size:9px;color:#6B7280;">Bonjour !</div>
+                  <div class="ui-name">Lucas</div>
+                </div>
+                <div class="ui-coins">🪙 245</div>
+              </div>
+              <div class="ui-xp-bar">
+                <div class="ui-xp-fill" style="width:60%;"></div>
+              </div>
+              <div class="ui-msg">💬 Tu es incroyable, Lucas ! Continue comme ça !</div>
+              <div class="ui-streak">🔥 5 jours de suite !</div>
+            </div>
+            <div class="ui-actions">
+              <div class="ui-action">🏆<span class="ui-action-label">Badges</span></div>
+              <div class="ui-action">🛍️<span class="ui-action-label">Boutique</span></div>
+              <div class="ui-action" style="border-color:#FFB800;background:#FFFBEB">🎁<span class="ui-action-label" style="color:#D97706">RÉCLAMER!</span></div>
+            </div>
+            <div style="font-size:9px;font-weight:700;color:#6B7280;margin:4px 8px;">Jeu 12 juin</div>
+            <div class="ui-routine">
+              <div class="ui-routine-icon ui-routine-morning">☀️</div>
+              <div class="ui-routine-info">
+                <div class="ui-routine-title">Quête du Matin</div>
+                <div class="ui-routine-sub">5 tâches · 20🪙 bonus</div>
+              </div>
+              <div class="ui-routine-arrow">›</div>
+            </div>
+            <div class="ui-routine" style="opacity:0.6">
+              <div class="ui-routine-icon" style="background:linear-gradient(135deg,#3B82F6,#6366F1);opacity:1">🌙</div>
+              <div class="ui-routine-info">
+                <div class="ui-routine-title">Quête du Soir</div>
+                <div class="ui-routine-sub">🔒 Premium</div>
+              </div>
+              <div class="ui-routine-arrow">›</div>
+            </div>
+            <div class="ui-status">⚔️  Lance ta quête du matin !</div>
+            <div class="ui-parent-btn">Mode Parent</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Accueil<br><span style="color:#9CA3AF;font-weight:400">Hub principal de l'enfant</span></div>
+    </div>
+
+    <!-- QUEST MORNING -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-quest" style="display:flex;flex-direction:column;">
+          <div class="q-top">
+            <div class="q-close">✕</div>
+            <div class="q-progress">
+              <div class="q-prog-track"><div class="q-prog-fill" style="width:40%;"></div></div>
+              <div class="q-prog-label">2/5</div>
+            </div>
+            <div class="q-coin">🪙 +10</div>
+          </div>
+          <div class="q-elastic">🏦 Temps d'avance : 8 min · fin prévue 8h15</div>
+          <div class="q-task">
+            <div class="q-emoji">🦷</div>
+            <div class="q-name">Se brosser les dents</div>
+            <div class="q-timer">
+              <div class="q-timer-icon">▶</div>
+              <div class="q-timer-text">Commencer · 3 min</div>
+            </div>
+          </div>
+          <div>
+            <div style="text-align:center;font-size:9px;color:rgba(255,255,255,0.85);font-weight:600;margin-bottom:4px;">🪙 10 pièces gagnées</div>
+            <div class="q-done">MISSION ACCOMPLIE ✓</div>
+            <div class="q-skip">Passer cette tâche</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Quête du Matin<br><span style="color:#9CA3AF;font-weight:400">Timer + bandeau temps élastique</span></div>
+    </div>
+
+    <!-- QUEST TIMER EXPIRED -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-quest" style="display:flex;flex-direction:column;">
+          <div class="q-top">
+            <div class="q-close">✕</div>
+            <div class="q-progress">
+              <div class="q-prog-track"><div class="q-prog-fill" style="width:60%;"></div></div>
+              <div class="q-prog-label">3/5</div>
+            </div>
+            <div class="q-coin">🪙 +15</div>
+          </div>
+          <div class="q-task">
+            <div class="q-emoji">👕</div>
+            <div class="q-name">S'habiller</div>
+            <div style="background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.4);border-radius:16px;padding:12px;text-align:center;width:100%;">
+              <div style="font-size:22px;font-weight:900;color:white;">⏰ Temps écoulé !</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.8);margin:4px 0;">Tu as fini ou il te faut plus de temps ?</div>
+              <div style="background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.6);border-radius:10px;padding:6px;margin-top:6px;font-size:9px;color:white;font-weight:900;">⏱ +2 minutes</div>
+            </div>
+          </div>
+          <div>
+            <div style="background:#D1FAE5;border-radius:14px;padding:10px;margin:6px 8px;text-align:center;font-size:10px;font-weight:900;color:#065F46;">✓  OUI, J'AI TERMINÉ !</div>
+            <div class="q-skip">Passer cette tâche</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Timer expiré<br><span style="color:#9CA3AF;font-weight:400">Option +2 min ou valider</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE 2 — Écrans enfant suite -->
+<div class="page">
+  <div class="page-title">Écrans de l'enfant — suite</div>
+  <div class="page-desc">Célébration, validation parentale, boutique et badges — le moteur de motivation.</div>
+
+  <div class="phones-row">
+
+    <!-- VALIDATION PARENTALE MODALE -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-quest" style="display:flex;flex-direction:column;position:relative;">
+          <div class="q-top">
+            <div class="q-close">✕</div>
+            <div class="q-progress">
+              <div class="q-prog-track"><div class="q-prog-fill" style="width:100%;"></div></div>
+              <div class="q-prog-label">5/5</div>
+            </div>
+            <div class="q-coin">🪙 +10</div>
+          </div>
+          <div class="q-task">
+            <div class="q-emoji">🍽️</div>
+            <div class="q-name">Mettre la table</div>
+          </div>
+          <div class="app-overlay">
+            <div class="app-card">
+              <div style="font-size:28px;margin-bottom:6px;">👤</div>
+              <div class="app-title">Validation parent</div>
+              <div class="app-sub">Demande à un parent de vérifier ta quête et d'entrer son code !</div>
+              <div class="app-input">● ● ● ●</div>
+              <div class="app-btn">Valider la quête ✓</div>
+              <div class="app-cancel">Plus tard</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Validation parentale<br><span style="color:#9CA3AF;font-weight:400">Code PIN 4 chiffres du parent</span></div>
+    </div>
+
+    <!-- CELEBRATION -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-celeb">
+          <div class="cel-congrats">BRAVO !</div>
+          <div class="cel-avatar">🦸</div>
+          <div class="cel-name">Lucas</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.8);text-align:center;margin-bottom:6px;">Quête du Matin accomplie !</div>
+          <div class="cel-coins">
+            <span style="font-size:18px;">🪙</span>
+            <span class="cel-coin-num">+45</span>
+            <span style="font-size:10px;color:white;font-weight:600;">pièces</span>
+          </div>
+          <div style="background:#FFB800;border-radius:10px;padding:5px 14px;margin:4px 0;font-size:11px;font-weight:900;color:white;">⭐  NIVEAU 4 !</div>
+          <div style="background:rgba(16,185,129,0.9);border-radius:10px;padding:5px 14px;margin:4px 0;font-size:10px;font-weight:900;color:white;">🏦  +12 min de temps libre !</div>
+          <div class="cel-badge-box">
+            <div style="font-size:9px;font-weight:800;color:white;text-align:center;margin-bottom:4px;">Badge débloqué !</div>
+            <div style="display:flex;justify-content:center;gap:5px;">
+              <div style="background:rgba(255,255,255,0.2);border-radius:14px;padding:3px 8px;display:flex;align-items:center;gap:4px;">
+                <span style="font-size:12px;">🔥</span>
+                <span style="font-size:8px;color:white;font-weight:700;">Flamme x3</span>
+              </div>
+            </div>
+          </div>
+          <div class="cel-mood">
+            <div style="font-size:9px;font-weight:800;color:white;text-align:center;margin-bottom:4px;">Comment tu te sens ?</div>
+            <div style="display:flex;justify-content:center;gap:4px;">
+              <div style="background:rgba(255,255,255,0.2);border-radius:10px;padding:4px 6px;text-align:center;font-size:14px;">😊</div>
+              <div style="background:rgba(255,255,255,0.35);border:2px solid white;border-radius:10px;padding:4px 6px;text-align:center;font-size:14px;">😌</div>
+              <div style="background:rgba(255,255,255,0.2);border-radius:10px;padding:4px 6px;text-align:center;font-size:14px;">😔</div>
+              <div style="background:rgba(255,255,255,0.2);border-radius:10px;padding:4px 6px;text-align:center;font-size:14px;">😤</div>
+            </div>
+          </div>
+          <div class="cel-continue">Continuer →</div>
+        </div>
+      </div>
+      <div class="phone-label">Célébration<br><span style="color:#9CA3AF;font-weight:400">Confettis + humeur du jour</span></div>
+    </div>
+
+    <!-- BOUTIQUE -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-shop">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px 4px;">
+            <div style="font-size:13px;font-weight:900;color:#1E1B4B;">🛍️ Boutique</div>
+            <div style="background:#FEF3C7;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;color:#B45309;">🪙 245</div>
+          </div>
+          <div style="display:flex;gap:4px;padding:0 8px 6px;overflow:hidden;">
+            <div style="background:#6C3AE8;border-radius:10px;padding:3px 8px;font-size:8px;font-weight:700;color:white;">Chapeaux</div>
+            <div style="background:white;border:1.5px solid #E5E7EB;border-radius:10px;padding:3px 8px;font-size:8px;font-weight:700;color:#6B7280;">Armes</div>
+            <div style="background:white;border:1.5px solid #E5E7EB;border-radius:10px;padding:3px 8px;font-size:8px;font-weight:700;color:#6B7280;">Magie</div>
+            <div style="background:white;border:1.5px solid #E5E7EB;border-radius:10px;padding:3px 8px;font-size:8px;font-weight:700;color:#6B7280;">Compagnons</div>
+          </div>
+          <div class="sh-grid">
+            <div class="sh-item sh-item-owned">
+              <span class="sh-emoji">🎉</span>
+              <div class="sh-name">Chapeau Fête</div>
+              <div class="sh-price-owned">✓ Équipé</div>
+            </div>
+            <div class="sh-item">
+              <span class="sh-emoji">🤠</span>
+              <div class="sh-name">Chapeau Cowboy</div>
+              <div class="sh-price">80 🪙</div>
+            </div>
+            <div class="sh-item">
+              <span class="sh-emoji">🎩</span>
+              <div class="sh-name">Haut-de-forme</div>
+              <div class="sh-price">120 🪙</div>
+            </div>
+            <div class="sh-item">
+              <span class="sh-emoji">👑</span>
+              <div class="sh-name">Couronne</div>
+              <div class="sh-price">200 🪙</div>
+            </div>
+            <div class="sh-item">
+              <span class="sh-emoji">⛑️</span>
+              <div class="sh-name">Casque</div>
+              <div class="sh-price">150 🪙</div>
+            </div>
+            <div class="sh-item">
+              <span class="sh-emoji">🧙</span>
+              <div class="sh-name">Chapeau Sorcière</div>
+              <div class="sh-price">130 🪙</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Boutique<br><span style="color:#9CA3AF;font-weight:400">4 catégories d'accessoires</span></div>
+    </div>
+
+    <!-- BADGES -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-badges">
+          <div style="padding:8px 10px 4px;">
+            <div style="font-size:13px;font-weight:900;color:#1E1B4B;">🏆 Badges</div>
+            <div style="font-size:9px;color:#6B7280;margin-top:2px;">10 / 38 débloqués</div>
+          </div>
+          <div class="bg-grid">
+            <div class="bg-item">
+              <span class="bg-emoji">👣</span>
+              <div class="bg-name">Premier Pas</div>
+              <div class="bg-desc">1ère tâche</div>
+            </div>
+            <div class="bg-item">
+              <span class="bg-emoji">☀️</span>
+              <div class="bg-name">Héros du Matin</div>
+              <div class="bg-desc">1ère routine</div>
+            </div>
+            <div class="bg-item">
+              <span class="bg-emoji">🔥</span>
+              <div class="bg-name">Flamme x3</div>
+              <div class="bg-desc">3 jours de suite</div>
+            </div>
+            <div class="bg-item">
+              <span class="bg-emoji">⚡</span>
+              <div class="bg-name">Apprenti</div>
+              <div class="bg-desc">10 tâches</div>
+            </div>
+            <div class="bg-item bg-item-locked">
+              <span class="bg-emoji">🔥🔥</span>
+              <div class="bg-name">Flamme x7</div>
+              <div class="bg-desc">7 jours de suite</div>
+            </div>
+            <div class="bg-item bg-item-locked">
+              <span class="bg-emoji">💪</span>
+              <div class="bg-name">Expert</div>
+              <div class="bg-desc">50 tâches</div>
+            </div>
+            <div class="bg-item bg-item-locked">
+              <span class="bg-emoji">🌟</span>
+              <div class="bg-name">Sem. Parfaite</div>
+              <div class="bg-desc">7j + 7 routines</div>
+            </div>
+            <div class="bg-item bg-item-locked">
+              <span class="bg-emoji">🏆</span>
+              <div class="bg-name">Légende</div>
+              <div class="bg-desc">30 jours de suite</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Badges (38 total)<br><span style="color:#9CA3AF;font-weight:400">Verrouillés en grisé</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE 3 — Écrans parent -->
+<div class="page">
+  <div class="page-title">Écrans du parent</div>
+  <div class="page-desc">Accès via code PIN 4 chiffres. Le parent configure, suit et ajuste sans que l'enfant puisse modifier ses réglages.</div>
+
+  <div class="phones-row">
+
+    <!-- PARENT PIN -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-onboard">
+          <div class="ob-step">
+            <div class="ob-emoji">🔐</div>
+            <div class="ob-title">Mode Parent</div>
+            <div class="ob-sub">Entrez votre code à 4 chiffres pour accéder aux paramètres</div>
+            <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;">
+              <div style="width:44px;height:54px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;">●</div>
+              <div style="width:44px;height:54px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;">●</div>
+              <div style="width:44px;height:54px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;"></div>
+              <div style="width:44px;height:54px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;">
+              <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;color:white;">1</div>
+              <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;color:white;">2</div>
+              <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;color:white;">3</div>
+              <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;color:white;">4</div>
+              <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;color:white;">5</div>
+              <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;color:white;">6</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Écran PIN Parent<br><span style="color:#9CA3AF;font-weight:400">Clavier numérique sécurisé</span></div>
+    </div>
+
+    <!-- PARENT DASHBOARD — STATS -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-parent">
+          <div class="pd-header">
+            <div class="pd-title">Mode Parent</div>
+            <div class="pd-close">Fermer ✕</div>
+          </div>
+          <div class="pd-tabs">
+            <div class="pd-tab pd-tab-active">📊 Stats</div>
+            <div class="pd-tab">⚙️ Config</div>
+            <div class="pd-tab">🔔 Notifs</div>
+            <div class="pd-tab">🎁 Récomp.</div>
+            <div class="pd-tab">⭐ Abo.</div>
+          </div>
+          <div style="padding:0 0 4px;">
+            <div class="pd-card">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:34px;height:34px;border-radius:17px;background:linear-gradient(135deg,#6C3AE8,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:18px;">🦸</div>
+                <div style="flex:1">
+                  <div style="font-size:11px;font-weight:800;color:#1E1B4B;">Lucas, 9 ans</div>
+                  <div style="font-size:8px;color:#6B7280;">Niveau 4 · 245🪙 · 320 XP</div>
+                  <div style="font-size:8px;color:#B45309;font-weight:700;">🔥 5 jours consécutifs</div>
+                </div>
+              </div>
+            </div>
+            <div class="pd-card">
+              <div style="font-size:9px;font-weight:800;color:#1E1B4B;margin-bottom:4px;">Semaine en cours</div>
+              <div class="pd-stat">71%</div>
+              <div style="font-size:8px;color:#6B7280;text-align:center;margin-bottom:6px;">de complétion</div>
+              <div class="pd-week">
+                <div class="pd-day"><div class="pd-dot pd-done">☀️</div><div style="font-size:8px;">😊</div><div style="font-size:8px;color:#6B7280;font-weight:700;">L</div></div>
+                <div class="pd-day"><div class="pd-dot pd-done">☀️</div><div style="font-size:8px;">😌</div><div style="font-size:8px;color:#6B7280;font-weight:700;">M</div></div>
+                <div class="pd-day"><div class="pd-dot pd-empty">☀️</div><div style="font-size:8px;"> </div><div style="font-size:8px;color:#6B7280;font-weight:700;">M</div></div>
+                <div class="pd-day"><div class="pd-dot pd-done">☀️</div><div style="font-size:8px;">😊</div><div style="font-size:8px;color:#6B7280;font-weight:700;">J</div></div>
+                <div class="pd-day"><div class="pd-dot pd-done">☀️</div><div style="font-size:8px;">😔</div><div style="font-size:8px;color:#6B7280;font-weight:700;">V</div></div>
+                <div class="pd-day"><div class="pd-dot pd-done">☀️</div><div style="font-size:8px;">😊</div><div style="font-size:8px;color:#6B7280;font-weight:700;">S</div></div>
+                <div class="pd-day"><div class="pd-dot pd-empty">☀️</div><div style="font-size:8px;"> </div><div style="font-size:8px;color:#6B7280;font-weight:700;">D</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Tableau de bord — Stats<br><span style="color:#9CA3AF;font-weight:400">Taux de complétion + météo émotions</span></div>
+    </div>
+
+    <!-- PARENT DASHBOARD — CONFIG -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-parent">
+          <div class="pd-header">
+            <div class="pd-title">Mode Parent</div>
+            <div class="pd-close">Fermer ✕</div>
+          </div>
+          <div class="pd-tabs">
+            <div class="pd-tab">📊 Stats</div>
+            <div class="pd-tab pd-tab-active">⚙️ Config</div>
+            <div class="pd-tab">🔔 Notifs</div>
+            <div class="pd-tab">🎁 Récomp.</div>
+            <div class="pd-tab">⭐ Abo.</div>
+          </div>
+          <div style="overflow:hidden;max-height:350px;">
+            <div class="pd-card">
+              <div style="font-size:9px;font-weight:800;color:#1E1B4B;margin-bottom:6px;">🌴 Jours de repos</div>
+              <div style="display:flex;gap:3px;">
+                <div style="flex:1;background:#E5E7EB;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#6B7280;">L</div>
+                <div style="flex:1;background:#E5E7EB;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#6B7280;">M</div>
+                <div style="flex:1;background:#E5E7EB;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#6B7280;">M</div>
+                <div style="flex:1;background:#E5E7EB;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#6B7280;">J</div>
+                <div style="flex:1;background:#E5E7EB;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#6B7280;">V</div>
+                <div style="flex:1;background:#ECFDF5;border:1.5px solid #10B981;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#065F46;">S</div>
+                <div style="flex:1;background:#ECFDF5;border:1.5px solid #10B981;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:800;color:#065F46;">D</div>
+              </div>
+            </div>
+            <div class="pd-card">
+              <div class="pd-approval">
+                <div class="pd-approval-info">
+                  <div class="pd-approval-title">👤 Validation parentale des quêtes</div>
+                  <div class="pd-approval-sub">Code PIN requis pour valider la fin de quête</div>
+                </div>
+                <div class="pd-switch"><div class="pd-switch-thumb"></div></div>
+              </div>
+            </div>
+            <div class="pd-card">
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+                <span style="font-size:14px;">☀️</span>
+                <div style="font-size:9px;font-weight:800;color:#1E1B4B;flex:1;">Routine du Matin</div>
+              </div>
+              <div class="pd-endtime">
+                <div class="pd-endtime-label">⏰ Terminer avant</div>
+                <div class="pd-endtime-input">08:15</div>
+              </div>
+              <div class="pd-task-row">
+                <span style="font-size:12px;">🦷</span>
+                <div class="pd-task-name">Se brosser les dents</div>
+                <div class="pd-dur-chip">⏱ 3 min</div>
+                <div class="pd-switch"><div class="pd-switch-thumb"></div></div>
+              </div>
+              <div class="pd-task-row">
+                <span style="font-size:12px;">👕</span>
+                <div class="pd-task-name">S'habiller</div>
+                <div class="pd-dur-chip">⏱ 5 min</div>
+                <div class="pd-switch"><div class="pd-switch-thumb"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Config — Tâches<br><span style="color:#9CA3AF;font-weight:400">Durées · Jours repos · Heure de fin</span></div>
+    </div>
+
+    <!-- PAYWALL -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen s-paywall">
+          <div class="pw-hero">
+            <div class="pw-hero-emoji">⭐</div>
+            <div class="pw-hero-title">FocusHéros Premium</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.85);text-align:center;margin-top:3px;">Transforme chaque journée en aventure complète</div>
+          </div>
+          <div class="pw-timeline">
+            <div style="font-size:9px;font-weight:800;color:#1E1B4B;margin-bottom:6px;">Comment fonctionne l'essai gratuit</div>
+            <div class="pw-tl-row"><div class="pw-tl-dot">🔓</div><div><div class="pw-tl-day">Aujourd'hui</div><div class="pw-tl-desc">Tout débloqué immédiatement</div></div></div>
+            <div class="pw-tl-row"><div class="pw-tl-dot">🔔</div><div><div class="pw-tl-day">Jour 5</div><div class="pw-tl-desc">Rappel avant la fin de l'essai</div></div></div>
+            <div class="pw-tl-row"><div class="pw-tl-dot">⭐</div><div><div class="pw-tl-day">Jour 7</div><div class="pw-tl-desc">Abonnement démarre. Annulable.</div></div></div>
+          </div>
+          <div class="pw-plans">
+            <div class="pw-plan">
+              <div style="font-size:8px;font-weight:700;color:#6B7280;">Mensuel</div>
+              <div class="pw-plan-price">9,99€</div>
+              <div style="font-size:8px;color:#6B7280;">/mois</div>
+            </div>
+            <div class="pw-plan pw-plan-sel">
+              <div style="font-size:8px;font-weight:700;color:#F97316;">Annuel</div>
+              <div class="pw-plan-price" style="color:#F97316;">49,99€</div>
+              <div style="font-size:8px;color:#F97316;">/an · -58%</div>
+            </div>
+          </div>
+          <div class="pw-cta">🚀 Commencer mes 7 jours gratuits<br><span style="font-size:8px;opacity:0.85;">puis 49,99€/an · sans engagement</span></div>
+          <div style="display:flex;gap:4px;padding:6px 8px;">
+            <div style="flex:1;text-align:center;"><div style="font-size:11px;">🔒</div><div style="font-size:7px;color:#6B7280;font-weight:600;text-align:center;">Paiement<br>sécurisé</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:11px;">🔔</div><div style="font-size:7px;color:#6B7280;font-weight:600;text-align:center;">Rappel<br>essai</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:11px;">✕</div><div style="font-size:7px;color:#6B7280;font-weight:600;text-align:center;">Annulation<br>2 clics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Paywall Premium<br><span style="color:#9CA3AF;font-weight:400">Essai 7 jours · 49,99€/an</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE 4 — Récapitulatif features -->
+<div class="feat-section">
+  <div class="feat-title">Ce que nous avons construit — Liste complète</div>
+  <div class="feat-desc">Toutes les fonctionnalités implémentées, leur raison d'être et leur bénéfice concret pour l'enfant TDAH et les parents.</div>
+
+  <div class="status-grid">
+    <div class="status-card"><div class="status-num">14</div><div class="status-label">Écrans</div></div>
+    <div class="status-card"><div class="status-num">38</div><div class="status-label">Badges</div></div>
+    <div class="status-card"><div class="status-num">50+</div><div class="status-label">Items boutique</div></div>
+    <div class="status-card"><div class="status-num">22</div><div class="status-label">Messages du jour</div></div>
+    <div class="status-card"><div class="status-num">0</div><div class="status-label">Crashs connus</div></div>
+    <div class="status-card"><div class="status-num">100%</div><div class="status-label">Hors ligne</div></div>
+  </div>
+
+  <!-- CATÉGORIE : EXPÉRIENCE ENFANT -->
+  <div class="feat-category">
+    <div class="feat-cat-title"><span class="feat-cat-emoji">🧒</span> Expérience de l'enfant</div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Quête du Matin</div>
+        <div class="feat-item-name">Routine avec timer visuel</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Chaque tâche (brossage dents, s'habiller…) a un <b>compte à rebours animé</b> avec barre de progression. L'enfant sait exactement combien de temps il lui reste : <b>réduit l'anxiété du "combien de temps ça va prendre ?"</b> qui est un symptôme clé du TDAH. Le timer peut être ignoré — il n'est jamais obligatoire.</div>
+        <div class="feat-item-tech">QuestScreen.js · timer local useRef · clearInterval on unmount</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">+2 min</div>
+        <div class="feat-item-name">Extension du timer</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Quand le timer expire, au lieu d'un message d'échec, l'enfant voit : <b>"Tu as fini ou il te faut plus de temps ?"</b> avec un bouton +2 minutes. Jamais punitif. <b>L'erreur est normalisée</b> — les cerveaux TDAH ont besoin de souplesse pour ne pas se décourager.</div>
+        <div class="feat-item-tech">timerExpired state · addExtraTime() · startedDurationRef</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">Gratuit</div>
+        <div class="feat-item-name">Pièces et XP</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Chaque tâche rapporte des pièces (🪙) et de l'XP. Les pièces <b>s'échangent contre de vrais accessoires</b> dans la boutique, les XP font monter de niveau. <b>Renforcement positif immédiat</b> : les cerveaux TDAH sont sensibles aux récompenses à court terme — une attente longue ne fonctionne pas.</div>
+        <div class="feat-item-tech">earnRewards() avec Number() guard · getLevelFromXp()</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Héros & avatar</div>
+        <div class="feat-item-name">Personnalisation complète</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">8 avatars (4 garçons, 4 filles), chapeaux, armes, magie et compagnons achetables avec les pièces gagnées. <b>L'enfant incarne son héros</b> : l'appartenance émotionnelle à son personnage augmente la motivation intrinsèque. Les items magiques (lune, arc-en-ciel…) dépassent le cercle de l'avatar — <b>visuellement impressionnant</b>.</div>
+        <div class="feat-item-tech">HeroAvatar.js · magicLayer hors overflow:hidden · AVATAR_ANCHORS</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Confettis + sons</div>
+        <div class="feat-item-name">Célébration de fin de quête</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Confettis animés, fanfare, badge de niveau, pièces gagnées et météo des émotions du jour. <b>Le cerveau TDAH a besoin d'un feedback fort et immédiat</b> pour ancrer la réussite. La fanfare (sons) renforce le circuit de récompense au moment exact de la victoire.</div>
+        <div class="feat-item-tech">CelebrationScreen.js · ConfettiPiece isolé (rules of hooks) · expo-av</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">38 badges</div>
+        <div class="feat-item-name">Système de badges</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">38 badges organisés par catégories : séries, tâches, routines, niveaux, pièces, boutique. Les badges verrouillés apparaissent en grisé — <b>l'enfant VOIT ce qu'il peut encore obtenir</b>. Ce design "collection" crée un sentiment de progression même les jours difficiles.</div>
+        <div class="feat-item-tech">badgeData.js · checkAndAwardBadges() avec try/catch par badge · BadgeToast mid-session</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Compagnon</div>
+        <div class="feat-item-name">Compagnon qui célèbre</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Le compagnon équipé (chat, lapin, dragon…) <b>saute de joie avec un message aléatoire</b> ("Bravo !", "Champion !") à chaque tâche validée. Renforcement positif UNIQUEMENT — jamais de réaction triste ou punitive. <b>Pour les TDAH, chaque micro-victoire mérite d'être célébrée.</b></div>
+        <div class="feat-item-tech">CompanionCheer.js · trigger counter (pas bool) · useNativeDriver</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">1x/jour</div>
+        <div class="feat-item-name">Météo des émotions</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Après chaque quête, l'enfant choisit parmi 4 émojis comment il se sent. <b>Limite : une seule fois par jour</b>. Deux utilités : permet à l'enfant d'identifier ses émotions (compétence importante pour les TDAH) et donne au parent/praticien des données sur le bien-être dans le temps.</div>
+        <div class="feat-item-tech">moodLog dans le store · hasMoodToday() · moodData.js</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">22 messages</div>
+        <div class="feat-item-name">Message du jour personnalisé</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">22 messages encourageants qui changent chaque jour, <b>avec le prénom de l'enfant</b> ("Lucas, tu es une machine !"). Déterministe par jour de l'année — le même message toute la journée, différent le lendemain. <b>Donne l'impression que l'app "connaît" l'enfant.</b></div>
+        <div class="feat-item-tech">motivationData.js · getDailyMessage() · dayOfYear modulo</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CATÉGORIE : ANTI-FRUSTRATION -->
+  <div class="feat-category">
+    <div class="feat-cat-title"><span class="feat-cat-emoji">🃏</span> Mécaniques anti-frustration</div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge gold">2/semaine</div>
+        <div class="feat-item-name">Jokers de série</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">2 jokers par semaine : passer une quête difficile <b>sans casser la série</b>. La série (🔥 N jours de suite) est un moteur de motivation fort — la perdre est très démotivant pour un TDAH. Le joker dit : <b>"Tout le monde a des jours difficiles, c'est OK."</b> Sans pièces mais sans punition.</div>
+        <div class="feat-item-tech">useJoker() · getJokersLeft() · jokersUsedDates · getWeekStart() DST-safe</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">Configurable</div>
+        <div class="feat-item-name">Jours de repos</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Le parent désactive les quêtes pour certains jours de la semaine (ex. weekend). L'app affiche "Bonne journée de repos !" — <b>pas de culpabilité</b>. Pour les enfants TDAH, la rigidité excessive augmente l'anxiété. Un planning souple est plus efficace qu'un planning parfait.</div>
+        <div class="feat-item-tech">restDays dans le store · updateRestDays() · isRestDay check dans HomeScreen</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge orange">Passer</div>
+        <div class="feat-item-name">Skip de tâche</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">L'enfant peut passer une tâche individuelle (sans pièces pour cette tâche, mais la quête continue). Sur la dernière tâche, l'alerte dit maintenant clairement "Abandonner la quête ?" au lieu de "Passer". <b>Pas d'enfermement dans un état bloquant.</b></div>
+        <div class="feat-item-tech">handleSkip() · busyRef lifecycle · Alert avec labels contextuels</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">Réclamable</div>
+        <div class="feat-item-name">Récompenses concrètes</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Le parent crée des récompenses personnalisées avec un coût en pièces : "30 min de jeux vidéo = 200🪙". <b>L'abstraction devient concret</b> : l'enfant sait exactement combien de routines il doit faire pour gagner sa récompense. Paliers recommandés : 200–400 pièces (1–2 semaines de régularité).</div>
+        <div class="feat-item-tech">RewardsScreen · claimReward() · toggleRewardActive · deleteReward</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5 — Features parent et technique -->
+<div class="feat-section">
+  <div class="feat-title">Fonctionnalités avancées</div>
+  <div class="feat-desc">Outils pour les parents, innovations techniques et protection contre les problèmes potentiels.</div>
+
+  <!-- CATÉGORIE : OUTILS PARENT -->
+  <div class="feat-category">
+    <div class="feat-cat-title"><span class="feat-cat-emoji">👤</span> Outils parent</div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Validation parentale</div>
+        <div class="feat-item-name">Anti-triche optionnel</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Si activé, la fin de la dernière tâche d'une quête affiche une modale demandant <b>le code PIN du parent</b>. L'enfant doit physiquement aller chercher un parent. Double bénéfice : <b>responsabilisation de l'enfant</b> ("j'ai vraiment fait mes tâches") et <b>moment de connexion parent-enfant</b>. Désactivé par défaut pour ne pas alourdir.</div>
+        <div class="feat-item-tech">parentApprovalRequired toggle · handleApprovalSubmit · busyRef reste true pendant la modale</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">Temps élastique</div>
+        <div class="feat-item-name">Adaptation automatique aux retards</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Le parent définit une heure de fin pour la quête (ex. "08:15 pour l'école"). Si l'enfant est en retard, <b>les timers des tâches restantes se compriment automatiquement</b> (minimum 30s). En avance ? <b>Le temps libre gagné s'affiche sur la célébration</b> ("🏦 +12 min de temps libre !"). Jamais punitif — bandeau doux, pas d'alarme rouge.</div>
+        <div class="feat-item-tech">ElasticBanner.js · elasticDuration() · endDate figé au montage · freeMinutes à la célébration</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge orange">10 suggestions</div>
+        <div class="feat-item-name">Bibliothèque de tâches suggérées</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Le parent voit 10 suggestions tap-to-fill (Faire son lit, Préparer son cartable, Nourrir l'animal…) quand il crée une nouvelle tâche. <b>Évite la page blanche</b> et accélère la configuration. Le formulaire reste libre pour les tâches non-listées.</div>
+        <div class="feat-item-tech">TASK_SUGGESTIONS · ScrollView horizontal · pré-remplit name + emoji + duration</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Durées adaptables</div>
+        <div class="feat-item-name">Timer par tâche ajustable</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Chaque tâche a une durée propre (1min à 30min) que le parent ajuste d'un tap. <b>Chaque enfant a son rythme</b> : un enfant de 6 ans mettra plus de temps pour s'habiller qu'un de 12 ans. L'adaptation du timer au profil spécifique de l'enfant réduit le stress d'un chrono irréaliste.</div>
+        <div class="feat-item-tech">askTaskDuration() · TASK_DURATIONS · setTaskDuration() · updateCustomTasks()</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">PDF mensuel</div>
+        <div class="feat-item-name">Rapport pour le praticien</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Rapport PDF mensuel exportable (Premium) avec tableau de complétion par jour, météo des émotions et statistiques. <b>Facilite la communication avec le médecin ou le psychologue</b> de l'enfant — souvent, ces professionnels manquent de données objectives sur la vie quotidienne entre les consultations.</div>
+        <div class="feat-item-tech">reportGenerator.js · expo-print · expo-sharing · PDF avec fallback URI</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Notifications</div>
+        <div class="feat-item-name">Rappels personnalisables</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Rappel quotidien pour la routine du matin et du soir à heure choisie. Les enfants TDAH ont souvent du mal à initier des tâches seuls — un rappel externe (la notification) <b>remplace la régulation interne qui leur fait défaut</b>.</div>
+        <div class="feat-item-tech">useNotifications.js · expo-notifications · saveAndApply()</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">Sauvegarde</div>
+        <div class="feat-item-name">Export/import backup</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Export JSON vers Google Drive/email, import pour restaurer. Toutes les données étant locales (RGPD, pas de cloud), <b>la sauvegarde manuelle protège contre la perte en cas de changement de téléphone</b>. Le code de secours à 8 chiffres permet de récupérer un code parent oublié.</div>
+        <div class="feat-item-tech">backup.js · importState() type guard · recoveryCode généré à l'onboarding</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CATÉGORIE : SOLIDITÉ TECHNIQUE -->
+  <div class="feat-category">
+    <div class="feat-cat-title"><span class="feat-cat-emoji">🛡️</span> Solidité technique</div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Anti-crash</div>
+        <div class="feat-item-name">busyRef anti double-tap</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Un <code>useRef</code> booléen bloque le deuxième tap sur "MISSION ACCOMPLIE" pendant que le premier est en cours. <b>Sans ça, l'enfant enthousiaste pouvait déclencher deux fois les récompenses</b> et se retrouver sur un index de tâche hors limites → crash garanti. Le ref (pas le state) est synchrone et ne provoque pas de re-render.</div>
+        <div class="feat-item-tech">busyRef.current en tête de handleDone/handleSkip · relâché dans grantTask finally</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">DST-safe</div>
+        <div class="feat-item-name">Calcul de dates sans UTC</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">La clé du jour utilise l'heure locale, jamais UTC. <b>Sans ça, un parent en France qui finit la routine de soir à 00h30 verrait sa série cassée</b> (le "jour UTC" aurait changé). <code>localDay()</code> et <code>setDate(-1)</code> gèrent les transitions heure été/hiver correctement.</div>
+        <div class="feat-item-tech">localDay() · localYesterday() · getWeeklyStats() avec setDate() · getWeekStart()</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Migration</div>
+        <div class="feat-item-name">normalizeState + migrations v1→v2→v3</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Chaque champ du store est sanitisé au chargement : types vérifiés, tableaux invalides remplacés, nombres NaN corrigés. <b>Protège contre les sauvegardes corrompues ou manuellement éditées.</b> Supporte la migration des anciennes versions de l'app (v1 flat, v2 profiles[], v3 actuel).</div>
+        <div class="feat-item-tech">normalizeState() · 15 champs sanitisés · migration v1/v2 dans loadState()</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge green">Best-effort</div>
+        <div class="feat-item-name">Système audio sécurisé</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">Le "ding" à la validation et la fanfare à la fin de quête sont chargés en parallèle au démarrage. <b>Si l'audio échoue (permissions, hardware), l'app reste 100% fonctionnelle et silencieuse</b> — jamais de crash. loadPromise singleton évite le double chargement.</div>
+        <div class="feat-item-tech">sounds.js · try/catch à 3 niveaux · loadPromise singleton · replayAsync</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Intro animée</div>
+        <div class="feat-item-name">SplashIntro non-bloquante</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">L'écran d'intro animée (logo spring, halo pulsant, tagline) s'affiche pendant que le store charge. <b>pointerEvents="none" garantit que l'animation ne bloque jamais l'interaction</b> — si le store charge avant la fin de l'animation, l'app est déjà utilisable derrière l'overlay.</div>
+        <div class="feat-item-tech">SplashIntro.js · zIndex:100 · MIN_DISPLAY_MS=1800ms · doneRef anti-double</div>
+      </div>
+    </div>
+
+    <div class="feat-item">
+      <div class="feat-item-left">
+        <div class="feat-item-badge">Google Play</div>
+        <div class="feat-item-name">Conformité Familles + RGPD</div>
+      </div>
+      <div class="feat-item-right">
+        <div class="feat-item-why">La politique Google Play Families impose une <b>barrière parentale obligatoire</b> avant tout écran d'achat. Le bouton "🌙 Quête du Soir" affiche une Alert avec "Je suis un parent" → ParentPin → Paywall. Jamais d'écran d'achat accessible directement à l'enfant. Aucune donnée ne quitte le téléphone (RGPD natif).</div>
+        <div class="feat-item-tech">navigation.navigate('ParentPin', { next: 'Paywall' }) · __DEV__ guard sur devUnlock</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CHECKLIST PRODUCTION -->
+  <div class="feat-category">
+    <div class="feat-cat-title"><span class="feat-cat-emoji">🚀</span> Checklist mise en production</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#10B981;margin-bottom:8px;">✅ Prêt</div>
+        <div style="font-size:12px;line-height:2;color:#374151;">
+          ✅ Code stable, 0 crash connu<br>
+          ✅ Store normalisé + migré<br>
+          ✅ Dates DST-safe<br>
+          ✅ Audio best-effort<br>
+          ✅ Animations non-bloquantes<br>
+          ✅ Double-tap protégé<br>
+          ✅ RGPD natif (0 donnée cloud)<br>
+          ✅ Barrière parentale achat<br>
+          ✅ 38 badges implémentés<br>
+          ✅ Sauvegarde/restore<br>
+          ✅ Rapport PDF praticien<br>
+          ✅ Back Android → isParentMode<br>
+          ✅ Routine gratuite (morning)<br>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#EF4444;margin-bottom:8px;">🔴 À faire avant lancement</div>
+        <div style="font-size:12px;line-height:2;color:#374151;">
+          🔴 Intégrer RevenueCat (vrai IAP)<br>
+          🔴 Remplacer icône (carré violet)<br>
+          🔴 Héberger politique conf.<br>
+          🔴 Fiche Play Store + screenshots<br>
+          🔴 Formulaire Data Safety<br>
+          🔴 Note IARC (classif. âge)<br>
+          🟡 Test sur Android physique<br>
+          🟡 Notification icon Android<br>
+          🟡 EAS Build release<br>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="background:linear-gradient(135deg,#6C3AE8,#4C1D95);color:white;padding:40px 60px;text-align:center;">
+  <div style="font-size:32px;margin-bottom:12px;">⭐</div>
+  <div style="font-size:20px;font-weight:900;margin-bottom:6px;">FocusHéros</div>
+  <div style="font-size:13px;color:rgba(255,255,255,0.7);">Rapport généré le 12 juin 2026 · com.focusheros.app</div>
+</div>
+
+</body>
+</html>
