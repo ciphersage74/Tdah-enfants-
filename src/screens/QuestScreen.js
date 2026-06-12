@@ -84,6 +84,7 @@ export default function QuestScreen({ navigation, route }) {
   };
 
   const handleDone = async () => {
+    if (!currentTask) return;
     // Anti double-tap : sinon pièces/XP comptées deux fois et index hors limites
     if (busyRef.current) return;
     busyRef.current = true;

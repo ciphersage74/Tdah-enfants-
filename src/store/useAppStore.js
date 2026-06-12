@@ -51,7 +51,13 @@ const generateRecoveryCode = () =>
 export const localDay = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-const localYesterday = () => localDay(new Date(Date.now() - 86400000));
+// setDate gère les transitions DST correctement ; ms-soustraction peut rater
+// d'un jour lors du passage heure été/hiver
+const localYesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return localDay(d);
+};
 
 // Monday 00:00 of the current week
 const getWeekStart = () => {
@@ -85,6 +91,22 @@ const normalizeState = (data) => {
   if (!next.customTasks || typeof next.customTasks !== 'object') {
     next.customTasks = defaultState.customTasks;
   }
+  if (!Array.isArray(next.customTasks?.morning)) {
+    next.customTasks = { ...next.customTasks, morning: defaultState.customTasks.morning };
+  }
+  if (!Array.isArray(next.customTasks?.evening)) {
+    next.customTasks = { ...next.customTasks, evening: defaultState.customTasks.evening };
+  }
+  // Sanitize numeric fields — une sauvegarde corrompue pourrait contenir des
+  // chaînes, ce qui transformerait earnRewards en concaténation de strings
+  next.coins = Number.isFinite(Number(next.coins)) ? Number(next.coins) : 20;
+  next.xp = Number.isFinite(Number(next.xp)) ? Number(next.xp) : 0;
+  next.level = Number.isFinite(Number(next.level)) ? Number(next.level) : 1;
+  next.streak = Number.isFinite(Number(next.streak)) ? Number(next.streak) : 0;
+  next.totalTasksDone = Number.isFinite(Number(next.totalTasksDone)) ? Number(next.totalTasksDone) : 0;
+  next.totalRoutinesDone = Number.isFinite(Number(next.totalRoutinesDone)) ? Number(next.totalRoutinesDone) : 0;
+  next.totalCoinsEarned = Number.isFinite(Number(next.totalCoinsEarned)) ? Number(next.totalCoinsEarned) : next.coins;
+  if (typeof next.parentPin !== 'string') next.parentPin = '1234';
   // Les utilisateurs existants n'ont pas encore de code de secours
   if (!next.recoveryCode) {
     next.recoveryCode = generateRecoveryCode();
@@ -155,8 +177,8 @@ export const useAppStore = create((set, get) => ({
       const rawV1 = await AsyncStorage.getItem('@focusheros_state');
       if (rawV1) {
         const v1 = JSON.parse(rawV1);
-        const migrated = { ...defaultState, ...v1, isParentMode: false };
-        set(migrated);
+        const migrated = normalizeState({ ...defaultState, ...v1 });
+        set({ ...migrated, isParentMode: false });
         save(migrated);
       }
     } catch (_) {}
@@ -175,8 +197,8 @@ export const useAppStore = create((set, get) => ({
   // ─── Gameplay ─────────────────────────────────────────────────
   earnRewards: (coins, xp) => {
     const s = get();
-    const newXp = s.xp + xp;
-    const newCoins = s.coins + coins;
+    const newXp = (Number(s.xp) || 0) + (Number(xp) || 0);
+    const newCoins = (Number(s.coins) || 0) + (Number(coins) || 0);
     const newLevel = getLevelFromXp(newXp);
     const leveledUp = newLevel > s.level;
     const totalCoinsEarned = s.totalCoinsEarned + coins;
@@ -189,6 +211,8 @@ export const useAppStore = create((set, get) => ({
   completeRoutine: (routineId) => {
     const s = get();
     const today = localDay();
+    // Garde contre la double-complétion (ex. handleDone appelé deux fois)
+    if (s.history?.[today]?.[routineId]?.completed) return;
     const yesterday = localYesterday();
     const history = { ...s.history };
     if (!history[today]) history[today] = {};
@@ -272,7 +296,10 @@ export const useAppStore = create((set, get) => ({
   checkAndAwardBadges: () => {
     const s = get();
     const earned = new Set(s.badges);
-    const newBadges = BADGES.filter((b) => !earned.has(b.id) && b.check(s));
+    const newBadges = BADGES.filter((b) => {
+      if (earned.has(b.id)) return false;
+      try { return b.check(s); } catch (_) { return false; }
+    });
     if (newBadges.length === 0) return [];
     const next = { ...s, badges: [...s.badges, ...newBadges.map((b) => b.id)] };
     set(next);

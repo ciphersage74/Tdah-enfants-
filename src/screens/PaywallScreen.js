@@ -27,7 +27,7 @@ export default function PaywallScreen({ navigation }) {
      */
     Alert.alert(
       '🚀 Bientôt disponible',
-      'Le paiement sécurisé sera activé lors du lancement sur le Play Store.\n\nEn attendant, le bouton "mode test développeur" en bas de l\'écran débloque les fonctionnalités Premium.',
+      'Le paiement sécurisé sera activé lors du lancement sur le Play Store.',
       [{ text: 'OK' }]
     );
   };
@@ -35,7 +35,7 @@ export default function PaywallScreen({ navigation }) {
   const handleDevUnlock = () => {
     unlockPremium();
     Alert.alert('🔧 Mode dev', 'Premium débloqué pour les tests.', [
-      { text: 'OK', onPress: () => navigation.navigate('Home') },
+      { text: 'OK', onPress: () => navigation.goBack() },
     ]);
   };
 
@@ -111,9 +111,12 @@ export default function PaywallScreen({ navigation }) {
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleDevUnlock} style={styles.devBtn}>
-          <Text style={styles.devBtnText}>🔧 Débloquer (mode test développeur)</Text>
-        </TouchableOpacity>
+        {/* Visible uniquement en build de développement — absent du build production */}
+        {__DEV__ && (
+          <TouchableOpacity onPress={handleDevUnlock} style={styles.devBtn}>
+            <Text style={styles.devBtnText}>🔧 Débloquer (mode test développeur)</Text>
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.legalText}>
           Résiliable à tout moment. Après l'essai gratuit,{' '}

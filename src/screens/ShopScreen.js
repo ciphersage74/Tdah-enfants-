@@ -17,13 +17,13 @@ export default function ShopScreen({ navigation }) {
 
   if (!profile) return null;
 
-  const unlocked = new Set(profile.unlockedItems);
-  const equipped = new Set(profile.equippedItems);
+  const unlocked = new Set(profile.unlockedItems || []);
+  const equipped = new Set(profile.equippedItems || []);
   const items = getItemsByCategory(activeCat);
   const available = items.filter((i) => profile.level >= i.requiredLevel);
   const locked = items.filter((i) => profile.level < i.requiredLevel);
 
-  const totalOwned = profile.unlockedItems.length;
+  const totalOwned = (profile.unlockedItems || []).length;
   const totalItems = SHOP_ITEMS.length;
 
   const handleBuy = (item) => {

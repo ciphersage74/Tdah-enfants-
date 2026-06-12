@@ -100,7 +100,7 @@ export default function HomeScreen({ navigation }) {
             <HeroAvatar avatarId={profile.avatarId} size={64} equippedItems={profile.equippedItems || []} />
             <View style={styles.heroInfo}>
               <Text style={styles.greetingText}>{greeting} !</Text>
-              <Text style={styles.heroName}>{profile.childName}</Text>
+              <Text style={styles.heroName}>{profile.childName || 'Héros'}</Text>
             </View>
             <CoinBadge amount={profile.coins} />
           </View>

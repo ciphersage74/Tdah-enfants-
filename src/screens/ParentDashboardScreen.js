@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, TextInput,
 } from 'react-native';
@@ -55,8 +55,14 @@ export default function ParentDashboardScreen({ navigation }) {
   const [newTaskDuration, setNewTaskDuration] = useState(300);
 
   useEffect(() => {
-    maybeAskForRating(profile?.totalRoutinesDone || 0, ratingPromptCount, recordRatingPrompt);
+    maybeAskForRating(profile?.totalRoutinesDone || 0, ratingPromptCount, recordRatingPrompt)
+      .catch(() => {});
   }, []);
+
+  const availableMonths = useMemo(
+    () => getAvailableMonths(useAppStore.getState().history),
+    [],
+  );
 
   if (!profile) return null;
 
@@ -218,7 +224,7 @@ export default function ParentDashboardScreen({ navigation }) {
           </View>
           {!isPremium && <View style={styles.lockPill}><Text style={styles.lockPillText}>🔒 Premium</Text></View>}
         </View>
-        {getAvailableMonths(useAppStore.getState().history).map(({ year, month, label, isCurrent, dayCount }) => {
+        {availableMonths.map(({ year, month, label, isCurrent, dayCount }) => {
           const key = `${year}-${month}`;
           const isLoading = reportLoading === key;
           return (
