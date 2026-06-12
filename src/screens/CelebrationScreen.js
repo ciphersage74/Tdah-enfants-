@@ -7,6 +7,7 @@ import { COLORS, GRADIENTS } from '../constants/colors';
 import { MOODS } from '../constants/moodData';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
+import { playFanfare } from '../utils/sounds';
 import HeroAvatar from '../components/HeroAvatar';
 
 const { width, height } = Dimensions.get('window');
@@ -70,6 +71,7 @@ export default function CelebrationScreen({ navigation, route }) {
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    playFanfare();
     Animated.parallel([
       Animated.spring(scaleAnim, { toValue: 1, tension: 60, friction: 7, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),

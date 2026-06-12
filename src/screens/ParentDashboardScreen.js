@@ -41,6 +41,7 @@ export default function ParentDashboardScreen({ navigation }) {
     getWeeklyStats, unlockPremium, restDays, updateRestDays, getJokersLeft,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
     importState, ratingPromptCount, recordRatingPrompt,
+    soundsEnabled, setSoundsEnabled,
   } = useAppStore();
   const profile = useActiveProfile();
   const { saveAndApply } = useNotifications();
@@ -575,6 +576,24 @@ export default function ParentDashboardScreen({ navigation }) {
         <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNotifs}>
           <Text style={styles.saveBtnText}>Enregistrer</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.notifRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.notifLabel}>🔊 Sons de l'application</Text>
+            <Text style={styles.cardSub}>
+              « Ding » à chaque tâche validée, fanfare en fin de quête.
+              Les retours sonores immédiats renforcent la motivation des enfants TDAH.
+            </Text>
+          </View>
+          <Switch
+            value={soundsEnabled !== false}
+            onValueChange={setSoundsEnabled}
+            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+            thumbColor={soundsEnabled !== false ? COLORS.primary : '#fff'}
+          />
+        </View>
       </View>
       <View style={{ height: 20 }} />
     </ScrollView>

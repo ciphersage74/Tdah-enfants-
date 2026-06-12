@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAppStore } from './src/store/useAppStore';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useNotifications } from './src/hooks/useNotifications';
+import { loadSounds } from './src/utils/sounds';
 import SplashIntro from './src/components/SplashIntro';
 
 function Root() {
@@ -15,6 +16,7 @@ function Root() {
   const { requestPermissions, applySchedule } = useNotifications();
 
   useEffect(() => {
+    loadSounds(); // préchargement en parallèle, best-effort
     (async () => {
       try {
         await loadState();

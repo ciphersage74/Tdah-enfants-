@@ -9,6 +9,7 @@ import { COLORS, GRADIENTS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
+import { playDing } from '../utils/sounds';
 import BadgeToast from '../components/BadgeToast';
 
 export default function QuestScreen({ navigation, route }) {
@@ -106,6 +107,7 @@ export default function QuestScreen({ navigation, route }) {
 
     if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    playDing();
     pulseDoneBtn();
     recordTaskDone();
 

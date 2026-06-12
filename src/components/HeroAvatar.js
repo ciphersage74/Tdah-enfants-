@@ -84,7 +84,7 @@ export default function HeroAvatar({ avatarId = 'superhero', size = 80, showBord
 
   return (
     <View style={{ width: size, height: size }}>
-      {/* Cercle : magie (derrière) + personnage, coupés au cercle */}
+      {/* Cercle : personnage, coupé au cercle */}
       <View
         style={[
           StyleSheet.absoluteFill,
@@ -97,19 +97,22 @@ export default function HeroAvatar({ avatarId = 'superhero', size = 80, showBord
           },
         ]}
       >
-        {magicItem && ITEM_IMAGES[magicItem.id] && (
-          <Image
-            source={ITEM_IMAGES[magicItem.id]}
-            style={[StyleSheet.absoluteFill, { width: size, height: size, opacity: 0.95 }]}
-            resizeMode="contain"
-          />
-        )}
         {baseImage ? (
           <Image source={baseImage} style={{ width: size, height: size }} resizeMode="cover" />
         ) : (
           <Text style={{ fontSize: size * 0.5 }}>{theme.emoji}</Text>
         )}
       </View>
+
+      {/* Magie : hors du cercle clippé sinon la lune & co sont coupées par le rond.
+          zIndex 1 = au-dessus du personnage mais sous chapeau/arme/compagnon */}
+      {magicItem && ITEM_IMAGES[magicItem.id] && (
+        <Image
+          source={ITEM_IMAGES[magicItem.id]}
+          style={[styles.magicLayer, { width: size, height: size, opacity: 0.95 }]}
+          resizeMode="contain"
+        />
+      )}
 
       {/* Chapeau / arme / compagnon : non coupés, peuvent dépasser du cercle */}
       {hatItem && ITEM_IMAGES[hatItem.id] && (
@@ -179,6 +182,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  magicLayer: {
+    position: 'absolute',
+    zIndex: 1,
   },
   itemLayer: {
     position: 'absolute',

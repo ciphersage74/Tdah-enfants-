@@ -35,6 +35,7 @@ const defaultState = {
   notifEveningEnabled: false,
   notifMorningTime: '07:30',
   notifEveningTime: '18:30',
+  soundsEnabled: true,
   restDays: [],
   jokersUsedDates: [],
   moodLog: {},
@@ -435,6 +436,12 @@ export const useAppStore = create((set, get) => ({
 
   unlockPremium: () => {
     const next = { ...get(), isPremium: true };
+    set(next);
+    save(next);
+  },
+
+  setSoundsEnabled: (enabled) => {
+    const next = { ...get(), soundsEnabled: !!enabled };
     set(next);
     save(next);
   },

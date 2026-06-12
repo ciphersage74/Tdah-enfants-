@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../constants/colors';
+import { COLORS, AVATAR_LABELS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
+import { getDailyMessage } from '../constants/motivationData';
+import { getShopItemById } from '../constants/shopData';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import HeroAvatar from '../components/HeroAvatar';
@@ -22,6 +24,7 @@ export default function HomeScreen({ navigation }) {
   const profile = useActiveProfile();
   const [toastBadge, setToastBadge] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
 
   if (!profile) return null;
 
@@ -97,7 +100,9 @@ export default function HomeScreen({ navigation }) {
         {/* Header */}
         <View style={styles.headerCard}>
           <View style={styles.headerRow}>
-            <HeroAvatar avatarId={profile.avatarId} size={64} equippedItems={profile.equippedItems || []} />
+            <TouchableOpacity onPress={() => setAvatarModalVisible(true)} activeOpacity={0.7}>
+              <HeroAvatar avatarId={profile.avatarId} size={64} equippedItems={profile.equippedItems || []} />
+            </TouchableOpacity>
             <View style={styles.heroInfo}>
               <Text style={styles.greetingText}>{greeting} !</Text>
               <Text style={styles.heroName}>{profile.childName || 'Héros'}</Text>
@@ -105,6 +110,7 @@ export default function HomeScreen({ navigation }) {
             <CoinBadge amount={profile.coins} />
           </View>
           <XpBar xp={profile.xp} level={profile.level} />
+          <Text style={styles.dailyMessage}>💬 {getDailyMessage(profile.childName)}</Text>
           {profile.streak >= 2 && (
             <View style={styles.streakBadge}>
               <Text style={styles.streakText}>🔥 {profile.streak} jours de suite !</Text>
@@ -209,6 +215,47 @@ export default function HomeScreen({ navigation }) {
       <TouchableOpacity style={styles.parentBtn} onPress={() => navigation.navigate('ParentPin')}>
         <Text style={styles.parentBtnText}>Mode Parent</Text>
       </TouchableOpacity>
+
+      {/* Avatar en grand — l'enfant admire son héros et ses accessoires */}
+      <Modal
+        visible={avatarModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAvatarModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.avatarModalOverlay}
+          activeOpacity={1}
+          onPress={() => setAvatarModalVisible(false)}
+        >
+          <View style={styles.avatarModalCard}>
+            <HeroAvatar
+              avatarId={profile.avatarId}
+              size={220}
+              equippedItems={profile.equippedItems || []}
+            />
+            <Text style={styles.avatarModalName}>{profile.childName}</Text>
+            <Text style={styles.avatarModalLevel}>
+              {AVATAR_LABELS[profile.avatarId] || 'Héros'} · Niveau {profile.level}
+            </Text>
+            {(profile.equippedItems || []).length > 0 && (
+              <View style={styles.avatarModalItems}>
+                {(profile.equippedItems || []).map((id) => {
+                  const item = getShopItemById(id);
+                  if (!item) return null;
+                  return (
+                    <View key={id} style={styles.avatarModalItemPill}>
+                      <Text style={{ fontSize: 14 }}>{item.emoji}</Text>
+                      <Text style={styles.avatarModalItemLabel}>{item.label}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+            <Text style={styles.avatarModalHint}>Toucher pour fermer</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -231,6 +278,34 @@ const styles = StyleSheet.create({
     paddingVertical: 6, alignSelf: 'flex-start',
   },
   streakText: { fontSize: 13, fontWeight: '700', color: '#B45309' },
+  dailyMessage: {
+    fontSize: 13, color: COLORS.primary, fontWeight: '600',
+    backgroundColor: COLORS.surface, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 8,
+  },
+
+  avatarModalOverlay: {
+    flex: 1, backgroundColor: 'rgba(30,27,75,0.75)',
+    alignItems: 'center', justifyContent: 'center', padding: 24,
+  },
+  avatarModalCard: {
+    backgroundColor: COLORS.white, borderRadius: 28,
+    paddingVertical: 48, paddingHorizontal: 28,
+    alignItems: 'center', width: '100%', maxWidth: 360,
+  },
+  avatarModalName: { fontSize: 26, fontWeight: '900', color: COLORS.textPrimary, marginTop: 24 },
+  avatarModalLevel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginTop: 4 },
+  avatarModalItems: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 6,
+    justifyContent: 'center', marginTop: 14,
+  },
+  avatarModalItemPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: COLORS.surface, borderRadius: 14,
+    paddingHorizontal: 10, paddingVertical: 5,
+  },
+  avatarModalItemLabel: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  avatarModalHint: { fontSize: 11, color: COLORS.textMuted, marginTop: 18 },
 
   actionRow: { flexDirection: 'row', gap: 10 },
   actionBtn: {
