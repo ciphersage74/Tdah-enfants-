@@ -49,6 +49,24 @@ const getWeekStart = () => {
   return monday;
 };
 
+// Cleans up loaded data: stale streaks and shop items that no longer exist
+const normalizeState = (data) => {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const next = { ...data };
+  // A streak is only alive if the last completion was today or yesterday
+  if (next.lastCompletedDate && next.lastCompletedDate < yesterday && next.lastCompletedDate !== today) {
+    next.streak = 0;
+  }
+  if (Array.isArray(next.unlockedItems)) {
+    next.unlockedItems = next.unlockedItems.filter((id) => !!getShopItemById(id));
+  }
+  if (Array.isArray(next.equippedItems)) {
+    next.equippedItems = next.equippedItems.filter((id) => !!getShopItemById(id));
+  }
+  return next;
+};
+
 const save = async (state) => {
   const { isParentMode, ...toSave } = state;
   try {
@@ -65,7 +83,9 @@ export const useAppStore = create((set, get) => ({
       // Check v3 (current flat format)
       const rawV3 = await AsyncStorage.getItem(STORAGE_KEY);
       if (rawV3) {
-        set({ ...JSON.parse(rawV3), isParentMode: false });
+        const normalized = normalizeState({ ...defaultState, ...JSON.parse(rawV3) });
+        set({ ...normalized, isParentMode: false });
+        save(normalized);
         return;
       }
       // Migrate from v2 (profiles[])
@@ -249,10 +269,10 @@ export const useAppStore = create((set, get) => ({
     if (equipped.includes(itemId)) {
       equipped = equipped.filter((i) => i !== itemId);
     } else {
-      // One item per position slot
+      // One item per category slot (hat / weapon / magic / companion)
       equipped = equipped.filter((i) => {
         const existing = getShopItemById(i);
-        return existing?.position !== item.position;
+        return existing && existing.category !== item.category;
       });
       equipped.push(itemId);
     }

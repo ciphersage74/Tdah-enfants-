@@ -465,10 +465,8 @@ export default function ParentDashboardScreen({ navigation }) {
             {[
               '🌙  Routine du soir complète',
               '📄  Rapport PDF pour le praticien',
-              '⚙️  Personnalisation des tâches',
-              '🔔  Notifications quotidiennes',
-              '📊  Statistiques avancées',
-              '🎁  Récompenses illimitées',
+              '⚙️  Personnalisation des tâches du soir',
+              '📊  Suivi complet de la journée',
             ].map((f, i) => (
               <View key={i} style={styles.featureItem}>
                 <Text style={styles.featureText}>{f}</Text>

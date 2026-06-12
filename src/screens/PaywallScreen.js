@@ -27,7 +27,7 @@ export default function PaywallScreen({ navigation }) {
      */
     Alert.alert(
       '🚀 Bientôt disponible',
-      'Le paiement sera activé lors du lancement sur le Play Store.\n\nPour tester l\'app en mode développeur, appuie 5 fois sur le bouton.',
+      'Le paiement sécurisé sera activé lors du lancement sur le Play Store.\n\nEn attendant, le bouton "mode test développeur" en bas de l\'écran débloque les fonctionnalités Premium.',
       [{ text: 'OK' }]
     );
   };

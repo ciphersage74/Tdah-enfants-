@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { AVATAR_THEMES, AVATAR_ANCHORS } from '../constants/colors';
 import { getShopItemById } from '../constants/shopData';
 
@@ -12,9 +12,14 @@ const AVATAR_IMAGES = {
   dragon:    require('../../assets/avatars/dragon.png'),
   ninja:     require('../../assets/avatars/ninja.png'),
   astronaut: require('../../assets/avatars/astronaut.png'),
+  // Legacy avatar ids from v1/v2 migrations
+  hero:      require('../../assets/avatars/superhero.png'),
+  wizard:    require('../../assets/avatars/witch.png'),
+  fox:       require('../../assets/avatars/ninja.png'),
 };
 
 // Uncomment each line as you add the image file in assets/items/.
+// Until an image exists, the item's emoji is shown as fallback.
 // All files must be 400×400 transparent PNG matching the character template.
 const ITEM_IMAGES = {
   // ── Chapeaux ─────────────────────────────────────────
@@ -24,7 +29,7 @@ const ITEM_IMAGES = {
   // crown:      require('../../assets/items/hat_crown.png'),
   // graduation: require('../../assets/items/hat_graduation.png'),
   // helm:       require('../../assets/items/hat_helm.png'),
-  // witch_hat:  require('../../assets/items/hat_witch.png'),
+  // witch:      require('../../assets/items/hat_witch.png'),
   // tiara:      require('../../assets/items/hat_tiara.png'),
   // santahat:   require('../../assets/items/hat_santa.png'),
   // ── Armes ────────────────────────────────────────────
@@ -58,84 +63,109 @@ const ITEM_IMAGES = {
   // unicorn:    require('../../assets/items/companion_unicorn.png'),
 };
 
+const ZERO_ANCHORS = { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 };
+
 export default function HeroAvatar({ avatarId = 'superhero', size = 80, showBorder = true, equippedItems = [] }) {
   const theme   = AVATAR_THEMES[avatarId] || AVATAR_THEMES.superhero;
-  const anchors = AVATAR_ANCHORS[avatarId] || { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 };
+  const anchors = AVATAR_ANCHORS[avatarId] || ZERO_ANCHORS;
   const scale   = size / 400;
 
-  const hatItem       = equippedItems.map(getShopItemById).find((i) => i?.category === 'hats');
-  const weaponItem    = equippedItems.map(getShopItemById).find((i) => i?.category === 'weapons');
-  const magicItem     = equippedItems.map(getShopItemById).find((i) => i?.category === 'magic');
-  const companionItem = equippedItems.map(getShopItemById).find((i) => i?.category === 'companions');
+  const findByCategory = (cat) =>
+    equippedItems.map(getShopItemById).find((i) => i?.category === cat);
+
+  const hatItem       = findByCategory('hats');
+  const weaponItem    = findByCategory('weapons');
+  const magicItem     = findByCategory('magic');
+  const companionItem = findByCategory('companions');
 
   const borderWidth = showBorder ? Math.max(2, size * 0.04) : 0;
+  const baseImage = AVATAR_IMAGES[avatarId];
 
   return (
-    <View style={[
-      styles.wrapper,
-      {
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        borderWidth,
-        borderColor: theme.color,
-        backgroundColor: theme.bg,
-      },
-    ]}>
-      {/* Base character */}
-      <Image
-        source={AVATAR_IMAGES[avatarId]}
-        style={StyleSheet.absoluteFill}
-        resizeMode="contain"
-      />
+    <View style={{ width: size, height: size }}>
+      {/* Circle clips the character + PNG layers */}
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          styles.circle,
+          {
+            borderRadius: size / 2,
+            borderWidth,
+            borderColor: theme.color,
+            backgroundColor: theme.bg,
+          },
+        ]}
+      >
+        {baseImage ? (
+          <Image source={baseImage} style={{ width: size, height: size }} resizeMode="cover" />
+        ) : (
+          <Text style={{ fontSize: size * 0.5 }}>{theme.emoji}</Text>
+        )}
 
-      {/* Magic aura — rendered first so it stays behind hat/weapon */}
-      {magicItem && ITEM_IMAGES[magicItem.id] && (
-        <Image
-          source={ITEM_IMAGES[magicItem.id]}
-          style={[StyleSheet.absoluteFill, { opacity: 0.92 }]}
-          resizeMode="contain"
-        />
+        {/* Magic aura behind hat/weapon */}
+        {magicItem && ITEM_IMAGES[magicItem.id] && (
+          <Image
+            source={ITEM_IMAGES[magicItem.id]}
+            style={[StyleSheet.absoluteFill, { opacity: 0.92 }]}
+            resizeMode="contain"
+          />
+        )}
+        {hatItem && ITEM_IMAGES[hatItem.id] && (
+          <Image
+            source={ITEM_IMAGES[hatItem.id]}
+            style={[StyleSheet.absoluteFill, { top: anchors.hatOffsetY * scale }]}
+            resizeMode="contain"
+          />
+        )}
+        {weaponItem && ITEM_IMAGES[weaponItem.id] && (
+          <Image
+            source={ITEM_IMAGES[weaponItem.id]}
+            style={[StyleSheet.absoluteFill, { left: anchors.weaponOffsetX * scale, top: anchors.weaponOffsetY * scale }]}
+            resizeMode="contain"
+          />
+        )}
+        {companionItem && ITEM_IMAGES[companionItem.id] && (
+          <Image
+            source={ITEM_IMAGES[companionItem.id]}
+            style={[StyleSheet.absoluteFill, { left: anchors.companionOffsetX * scale, top: anchors.companionOffsetY * scale }]}
+            resizeMode="contain"
+          />
+        )}
+      </View>
+
+      {/* Emoji fallbacks sit on top of the circle, not clipped by it */}
+      {!ITEM_IMAGES[hatItem?.id] && hatItem && (
+        <Text style={[styles.itemEmoji, { fontSize: size * 0.34, top: -size * 0.14, alignSelf: 'center' }]}>
+          {hatItem.emoji}
+        </Text>
       )}
-
-      {/* Hat — hatOffsetY shifts up (−) or down (+) if head isn't at template position */}
-      {hatItem && ITEM_IMAGES[hatItem.id] && (
-        <Image
-          source={ITEM_IMAGES[hatItem.id]}
-          style={[StyleSheet.absoluteFill, { top: anchors.hatOffsetY * scale }]}
-          resizeMode="contain"
-        />
+      {!ITEM_IMAGES[magicItem?.id] && magicItem && (
+        <Text style={[styles.itemEmoji, { fontSize: size * 0.26, top: -size * 0.04, left: -size * 0.06 }]}>
+          {magicItem.emoji}
+        </Text>
       )}
-
-      {/* Weapon */}
-      {weaponItem && ITEM_IMAGES[weaponItem.id] && (
-        <Image
-          source={ITEM_IMAGES[weaponItem.id]}
-          style={[
-            StyleSheet.absoluteFill,
-            { left: anchors.weaponOffsetX * scale, top: anchors.weaponOffsetY * scale },
-          ]}
-          resizeMode="contain"
-        />
+      {!ITEM_IMAGES[weaponItem?.id] && weaponItem && (
+        <Text style={[styles.itemEmoji, { fontSize: size * 0.3, bottom: -size * 0.02, right: -size * 0.08 }]}>
+          {weaponItem.emoji}
+        </Text>
       )}
-
-      {/* Companion */}
-      {companionItem && ITEM_IMAGES[companionItem.id] && (
-        <Image
-          source={ITEM_IMAGES[companionItem.id]}
-          style={[
-            StyleSheet.absoluteFill,
-            { left: anchors.companionOffsetX * scale, top: anchors.companionOffsetY * scale },
-          ]}
-          resizeMode="contain"
-        />
+      {!ITEM_IMAGES[companionItem?.id] && companionItem && (
+        <Text style={[styles.itemEmoji, { fontSize: size * 0.28, bottom: -size * 0.04, left: -size * 0.08 }]}>
+          {companionItem.emoji}
+        </Text>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  circle: {
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemEmoji: {
+    position: 'absolute',
+    zIndex: 3,
   },
 });
