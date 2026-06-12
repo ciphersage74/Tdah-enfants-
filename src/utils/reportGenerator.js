@@ -93,13 +93,15 @@ export const buildPractitionerReport = (state, year, month) => {
       const ok   = afterMood.filter((d) => d.morning?.completed).length;
       const rate = Math.round((ok / afterMood.length) * 100);
       const mood = getMoodById(moodId);
+      if (!mood) return;
       insights.push(`Lendemains de jours « ${mood.label} » : routine du matin réussie à ${rate}% (${ok}/${afterMood.length} jours).`);
     }
   });
 
   const moodRow = (moodId) => {
     const mood  = getMoodById(moodId);
-    const count = moodCounts[moodId];
+    if (!mood) return '';
+    const count = moodCounts[moodId] ?? 0;
     const pct   = moodTotal ? Math.round((count / moodTotal) * 100) : 0;
     return `
       <div class="mood-row">
@@ -116,7 +118,7 @@ export const buildPractitionerReport = (state, year, month) => {
       ${d.rest
         ? '<td colspan="2" class="restcell">🌴 Jour de repos</td>'
         : `${cell(d.morning)}${isPremium ? cell(d.evening) : '<td class="miss">·</td>'}`}
-      <td class="mood">${d.mood ? `${getMoodById(d.mood).emoji} ${getMoodById(d.mood).label}` : '—'}</td>
+      <td class="mood">${d.mood ? `${getMoodById(d.mood)?.emoji ?? ''} ${getMoodById(d.mood)?.label ?? ''}`.trim() || '—' : '—'}</td>
     </tr>`).join('');
 
   const periodLabel = isCurrent

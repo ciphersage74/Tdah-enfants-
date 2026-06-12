@@ -59,6 +59,14 @@ export default function ParentDashboardScreen({ navigation }) {
       .catch(() => {});
   }, []);
 
+  // Ensure isParentMode is cleared when Android hardware back button dismisses the screen
+  useEffect(() => {
+    const unsub = navigation.addListener('beforeRemove', () => {
+      setParentMode(false);
+    });
+    return unsub;
+  }, [navigation]);
+
   const availableMonths = useMemo(
     () => getAvailableMonths(useAppStore.getState().history),
     [],

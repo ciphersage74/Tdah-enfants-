@@ -42,7 +42,7 @@ export default function HomeScreen({ navigation }) {
   const confirmJoker = (routineId, label) => {
     Alert.alert(
       '🃏 Utiliser un joker ?',
-      `La ${label.slice(3).toLowerCase()} sera marquée comme passée.\n\nTa série de jours continue, mais tu ne gagnes pas de pièces. C'est OK, tout le monde a des jours difficiles !`,
+      `La ${label.replace(/^[^\s]+\s/, '').toLowerCase()} sera marquée comme passée.\n\nTa série de jours continue, mais tu ne gagnes pas de pièces. C'est OK, tout le monde a des jours difficiles !`,
       [
         { text: 'Annuler', style: 'cancel' },
         { text: 'Utiliser mon joker', onPress: () => useJoker(routineId) },

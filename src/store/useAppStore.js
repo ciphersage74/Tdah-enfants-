@@ -426,6 +426,7 @@ export const useAppStore = create((set, get) => ({
 
   // Restaure une sauvegarde exportée (remplace toutes les données actuelles)
   importState: (data) => {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return;
     const normalized = normalizeState({ ...defaultState, ...data });
     const next = { ...normalized, isParentMode: true };
     set(next);

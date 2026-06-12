@@ -95,7 +95,15 @@ export default function ParentPinScreen({ navigation, route }) {
     <SafeAreaView style={styles.safe}>
       <TouchableOpacity
         style={styles.closeBtn}
-        onPress={() => (mode === 'enter' ? navigation.goBack() : (setMode('enter'), setInput(''), setError('')))}
+        onPress={() => {
+          if (mode === 'enter') {
+            navigation.goBack();
+          } else {
+            setMode('enter');
+            setInput('');
+            setError('');
+          }
+        }}
       >
         <Text style={styles.closeText}>{mode === 'enter' ? '✕ Fermer' : '‹ Retour'}</Text>
       </TouchableOpacity>

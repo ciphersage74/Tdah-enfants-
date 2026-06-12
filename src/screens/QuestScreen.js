@@ -98,12 +98,16 @@ export default function QuestScreen({ navigation, route }) {
     setTotalCoins(earned);
 
     if (isLast) {
-      const finalCoins = earned + routine.bonusCoins;
-      const totalXp = tasks.reduce((s, t) => s + (t.xp || 0), 0) + routine.bonusXp;
-      const { leveledUp, newLevel } = earnRewards(finalCoins, totalXp);
-      completeRoutine(routineId);
-      const newBadges = checkAndAwardBadges();
-      navigation.replace('Celebration', { routineId, coinsEarned: finalCoins, leveledUp, newLevel, newBadges });
+      try {
+        const finalCoins = earned + routine.bonusCoins;
+        const totalXp = tasks.reduce((s, t) => s + (t.xp || 0), 0) + routine.bonusXp;
+        const { leveledUp, newLevel } = earnRewards(finalCoins, totalXp);
+        completeRoutine(routineId);
+        const newBadges = checkAndAwardBadges();
+        navigation.replace('Celebration', { routineId, coinsEarned: finalCoins, leveledUp, newLevel, newBadges });
+      } finally {
+        busyRef.current = false;
+      }
     } else {
       // Check badges mid-session
       const newBadges = checkAndAwardBadges();
@@ -113,25 +117,38 @@ export default function QuestScreen({ navigation, route }) {
       }
       setTimeLeft(null);
       setTimerRunning(false);
-      setTaskIndex((i) => Math.min(i + 1, tasks.length - 1));
+      setTaskIndex((i) => i + 1);
       busyRef.current = false;
     }
   };
 
   const handleSkip = () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const warnCoins = isLast && totalCoins > 0;
     Alert.alert(
       'Passer ?',
-      'Pas de pièces pour cette tâche.',
+      warnCoins
+        ? `Tu vas perdre les ${totalCoins} pièces accumulées cette session. Continue ?`
+        : 'Pas de pièces pour cette tâche.',
       [
-        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Annuler',
+          style: 'cancel',
+          onPress: () => { busyRef.current = false; },
+        },
         {
           text: 'Passer',
           style: 'destructive',
           onPress: () => {
             if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
             setTimeLeft(null);
-            if (isLast) navigation.goBack();
-            else setTaskIndex((i) => i + 1);
+            if (isLast) {
+              navigation.goBack();
+            } else {
+              setTaskIndex((i) => i + 1);
+              busyRef.current = false;
+            }
           },
         },
       ]
