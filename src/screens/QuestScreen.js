@@ -170,7 +170,8 @@ export default function QuestScreen({ navigation, route }) {
         const freeMinutes = endDate
           ? Math.floor(Math.max(0, (endDate.getTime() - Date.now()) / 1000) / 60)
           : 0;
-        navigation.replace('Celebration', { routineId, coinsEarned: finalCoins, leveledUp, newLevel, newBadges, freeMinutes });
+        navigation.replace('Celebration', { routineId, coinsEarned: finalCoins, leveledUp, newLevel, freeMinutes,
+          newBadges: newBadges.map(({ id, emoji, label }) => ({ id, emoji, label })) });
       } finally {
         busyRef.current = false;
       }
