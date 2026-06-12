@@ -79,7 +79,7 @@ export default function ParentPinScreen({ navigation }) {
 
   const TITLES = {
     enter:    { emoji: '🔐', title: 'Mode Parent',     sub: 'Entrez votre code à 4 chiffres' },
-    recovery: { emoji: '🆘', title: 'Code de secours', sub: 'Entrez le code de secours à 8 chiffres\n(visible dans Mode Parent → Config)' },
+    recovery: { emoji: '🆘', title: 'Code de secours', sub: 'Entrez le code à 8 chiffres donné\nà la création du compte' },
     newpin:   { emoji: '🆕', title: 'Nouveau code',    sub: 'Choisissez un nouveau code à 4 chiffres' },
     confirm:  { emoji: '✅', title: 'Confirmation',    sub: 'Entrez le même code une seconde fois' },
   };

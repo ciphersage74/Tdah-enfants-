@@ -148,10 +148,10 @@ export const useAppStore = create((set, get) => ({
   },
 
   // ─── Onboarding ───────────────────────────────────────────────
-  completeOnboarding: (childName, childAge, avatarId, parentPin, gender = 'boy') => {
+  completeOnboarding: (childName, childAge, avatarId, parentPin, gender = 'boy', recoveryCode = null) => {
     const next = {
       ...get(), hasOnboarded: true, childName, childAge, avatarId, parentPin, gender,
-      recoveryCode: get().recoveryCode || generateRecoveryCode(),
+      recoveryCode: recoveryCode || get().recoveryCode || generateRecoveryCode(),
     };
     set(next);
     save(next);

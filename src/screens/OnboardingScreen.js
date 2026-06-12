@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Animated, KeyboardAvoidingView, Platform, ScrollView,
+  Animated, KeyboardAvoidingView, Platform, ScrollView, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,7 +9,9 @@ import { COLORS, AVATAR_THEMES, AVATAR_LABELS, BOY_AVATARS, GIRL_AVATARS, GRADIE
 import { useAppStore } from '../store/useAppStore';
 import HeroAvatar from '../components/HeroAvatar';
 
-const STEPS = ['name', 'gender', 'age', 'avatar', 'pin'];
+const STEPS = ['name', 'gender', 'age', 'avatar', 'pin', 'recovery'];
+
+const makeRecoveryCode = () => String(Math.floor(10000000 + Math.random() * 90000000));
 
 export default function OnboardingScreen({ navigation }) {
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
@@ -21,6 +23,7 @@ export default function OnboardingScreen({ navigation }) {
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
+  const [recoveryCode] = useState(makeRecoveryCode);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const goNext = () => {
@@ -34,11 +37,25 @@ export default function OnboardingScreen({ navigation }) {
     setStep((s) => s + 1);
   };
 
-  const handleFinish = () => {
+  const handleValidatePin = () => {
     if (pin.length !== 4) { setPinError('Code à 4 chiffres requis'); return; }
     if (pin !== pinConfirm) { setPinError('Les codes ne correspondent pas'); return; }
-    completeOnboarding(childName.trim(), childAge, avatarId, pin, gender);
+    goNext();
+  };
+
+  const handleFinish = () => {
+    completeOnboarding(childName.trim(), childAge, avatarId, pin, gender, recoveryCode);
     navigation.replace('Home');
+  };
+
+  const handleEmailRecoveryCode = () => {
+    const subject = encodeURIComponent('FocusHéros — Code de secours');
+    const body = encodeURIComponent(
+      `Code de secours FocusHéros : ${recoveryCode}\n\n` +
+      'Ce code permet de réinitialiser le code parent si vous l\'oubliez.\n' +
+      'Conservez cet email précieusement.'
+    );
+    Linking.openURL(`mailto:?subject=${subject}&body=${body}`).catch(() => {});
   };
 
   const renderStep = () => {
@@ -184,10 +201,32 @@ export default function OnboardingScreen({ navigation }) {
             {!!pinError && <Text style={styles.error}>{pinError}</Text>}
             <TouchableOpacity
               style={[styles.btn, pin.length < 4 && styles.btnOff]}
-              onPress={handleFinish}
+              onPress={handleValidatePin}
               disabled={pin.length < 4}
             >
-              <Text style={styles.btnText}>C'est parti 🚀</Text>
+              <Text style={styles.btnText}>Continuer →</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'recovery':
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.bigEmoji}>🆘</Text>
+            <Text style={styles.title}>Code de secours</Text>
+            <Text style={styles.sub}>
+              Si vous oubliez votre code parent, ce code permettra d'en créer un nouveau.{'\n'}
+              <Text style={{ fontWeight: '800' }}>Notez-le maintenant</Text> — il ne sera plus
+              affiché qu'à l'intérieur du mode parent.
+            </Text>
+            <View style={styles.recoveryBox}>
+              <Text style={styles.recoveryCodeText}>{recoveryCode}</Text>
+            </View>
+            <TouchableOpacity style={styles.emailBtn} onPress={handleEmailRecoveryCode}>
+              <Text style={styles.emailBtnText}>📧 Me l'envoyer par email</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btn} onPress={handleFinish}>
+              <Text style={styles.btnText}>J'ai noté mon code, c'est parti 🚀</Text>
             </TouchableOpacity>
           </View>
         );
@@ -264,4 +303,18 @@ const styles = StyleSheet.create({
   genderLabel: { fontSize: 16, fontWeight: '800', color: 'rgba(255,255,255,0.8)' },
   genderLabelOn: { color: COLORS.white },
   genderCheck: { fontSize: 18, color: COLORS.white, fontWeight: '900' },
+  // Recovery code
+  recoveryBox: {
+    backgroundColor: COLORS.white, borderRadius: 16, paddingVertical: 18,
+    width: '100%', alignItems: 'center', marginBottom: 12,
+  },
+  recoveryCodeText: {
+    fontSize: 32, fontWeight: '900', color: COLORS.primary, letterSpacing: 6,
+  },
+  emailBtn: {
+    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 14, paddingVertical: 14,
+    width: '100%', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+  },
+  emailBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
 });
