@@ -38,6 +38,8 @@ const defaultState = {
   soundsEnabled: true,
   // Anti-triche optionnel : le parent saisit son code pour valider la fin de quête
   parentApprovalRequired: false,
+  // Temps élastique optionnel : heure de fin par routine, ex. { morning: '08:15' }
+  routineEndTimes: {},
   restDays: [],
   jokersUsedDates: [],
   moodLog: {},
@@ -91,6 +93,9 @@ const normalizeState = (data) => {
   if (!Array.isArray(next.restDays)) next.restDays = [];
   if (!next.history || typeof next.history !== 'object') next.history = {};
   if (!next.moodLog || typeof next.moodLog !== 'object') next.moodLog = {};
+  if (!next.routineEndTimes || typeof next.routineEndTimes !== 'object' || Array.isArray(next.routineEndTimes)) {
+    next.routineEndTimes = {};
+  }
   if (!next.customTasks || typeof next.customTasks !== 'object') {
     next.customTasks = defaultState.customTasks;
   }
@@ -450,6 +455,13 @@ export const useAppStore = create((set, get) => ({
 
   setParentApprovalRequired: (enabled) => {
     const next = { ...get(), parentApprovalRequired: !!enabled };
+    set(next);
+    save(next);
+  },
+
+  setRoutineEndTime: (routineId, time) => {
+    const current = get().routineEndTimes || {};
+    const next = { ...get(), routineEndTimes: { ...current, [routineId]: time || null } };
     set(next);
     save(next);
   },

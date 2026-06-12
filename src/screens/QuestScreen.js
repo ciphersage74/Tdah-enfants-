@@ -13,6 +13,7 @@ import { useActiveProfile } from '../hooks/useActiveProfile';
 import { playDing } from '../utils/sounds';
 import BadgeToast from '../components/BadgeToast';
 import CompanionCheer from '../components/CompanionCheer';
+import ElasticBanner from '../components/ElasticBanner';
 
 export default function QuestScreen({ navigation, route }) {
   const { routineId } = route.params || {};
@@ -53,9 +54,38 @@ export default function QuestScreen({ navigation, route }) {
   const btnScale = useRef(new Animated.Value(1)).current;
   const timerRef = useRef(null);
   const busyRef = useRef(false);
+  // Durée réellement lancée (peut être compressée par le temps élastique)
+  const startedDurationRef = useRef(0);
 
   const currentTask = tasks[taskIndex];
   const isLast = taskIndex === tasks.length - 1;
+
+  // ── Temps élastique (optionnel) ──────────────────────────────────
+  // Heure de fin configurée par le parent, figée au montage. Ignorée si
+  // invalide ou déjà (presque) dépassée : dans ce cas, routine classique.
+  const [endDate] = useState(() => {
+    const t = useAppStore.getState().routineEndTimes?.[routineId];
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(t || '')) return null;
+    const [h, m] = t.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d.getTime() - Date.now() > 2 * 60 * 1000 ? d : null;
+  });
+  const endLabel = endDate
+    ? `${endDate.getHours()}h${String(endDate.getMinutes()).padStart(2, '0')}`
+    : '';
+  const remainingTaskSeconds = tasks
+    .slice(taskIndex)
+    .reduce((s, t) => s + (t.duration || 0), 0);
+
+  // Si l'enfant est en retard sur l'heure de fin, les minuteurs restants
+  // se compressent proportionnellement (minimum 30 s, jamais punitif)
+  const elasticDuration = (base) => {
+    if (!endDate) return base;
+    const secondsLeft = Math.max(0, (endDate.getTime() - Date.now()) / 1000);
+    if (remainingTaskSeconds <= 0 || secondsLeft >= remainingTaskSeconds) return base;
+    return Math.max(30, Math.round(base * (secondsLeft / remainingTaskSeconds)));
+  };
 
   useEffect(() => {
     slideY.setValue(40);
@@ -86,8 +116,10 @@ export default function QuestScreen({ navigation, route }) {
 
   const startTimer = () => {
     if (timerRunning) return;
+    const duration = elasticDuration(currentTask.duration);
+    startedDurationRef.current = duration;
     setTimerExpired(false);
-    setTimeLeft(currentTask.duration);
+    setTimeLeft(duration);
     setTimerRunning(true);
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => Math.max(t - 1, 0));
@@ -96,6 +128,7 @@ export default function QuestScreen({ navigation, route }) {
 
   const addExtraTime = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    startedDurationRef.current = 120;
     setTimerExpired(false);
     setTimeLeft(120);
     setTimerRunning(true);
@@ -133,7 +166,11 @@ export default function QuestScreen({ navigation, route }) {
         const { leveledUp, newLevel } = earnRewards(finalCoins, totalXp);
         completeRoutine(routineId);
         const newBadges = checkAndAwardBadges();
-        navigation.replace('Celebration', { routineId, coinsEarned: finalCoins, leveledUp, newLevel, newBadges });
+        // Temps d'avance sur l'heure de fin = temps libre gagné, montré à la célébration
+        const freeMinutes = endDate
+          ? Math.floor(Math.max(0, (endDate.getTime() - Date.now()) / 1000) / 60)
+          : 0;
+        navigation.replace('Celebration', { routineId, coinsEarned: finalCoins, leveledUp, newLevel, newBadges, freeMinutes });
       } finally {
         busyRef.current = false;
       }
@@ -225,7 +262,7 @@ export default function QuestScreen({ navigation, route }) {
 
   const progress = (taskIndex + 1) / tasks.length;
   const gradient = GRADIENTS[routine.gradientKey] || GRADIENTS.primary;
-  const timerRatio = timeLeft !== null && currentTask.duration > 0 ? timeLeft / currentTask.duration : 0;
+  const timerRatio = timeLeft !== null && startedDurationRef.current > 0 ? timeLeft / startedDurationRef.current : 0;
 
   return (
     <LinearGradient colors={gradient} style={styles.gradient}>
@@ -248,6 +285,15 @@ export default function QuestScreen({ navigation, route }) {
             <Text style={styles.coinChipText}>🪙 +{currentTask.coins}</Text>
           </View>
         </View>
+
+        {/* Temps élastique : visible seulement si le parent a fixé une heure de fin */}
+        {endDate && (
+          <ElasticBanner
+            endDate={endDate.getTime()}
+            remainingTaskSeconds={remainingTaskSeconds}
+            endLabel={endLabel}
+          />
+        )}
 
         {/* Task */}
         <Animated.View style={[styles.taskArea, { opacity: fadeIn, transform: [{ translateY: slideY }] }]}>
@@ -274,7 +320,7 @@ export default function QuestScreen({ navigation, route }) {
             <TouchableOpacity style={styles.timerBtn} onPress={startTimer}>
               <Text style={styles.timerBtnIcon}>▶</Text>
               <Text style={styles.timerBtnLabel}>Commencer</Text>
-              <Text style={styles.timerBtnDuration}>{formatTime(currentTask.duration)}</Text>
+              <Text style={styles.timerBtnDuration}>{formatTime(elasticDuration(currentTask.duration))}</Text>
             </TouchableOpacity>
           )}
         </Animated.View>

@@ -58,6 +58,7 @@ export default function ParentDashboardScreen({ navigation }) {
     importState, ratingPromptCount, recordRatingPrompt,
     soundsEnabled, setSoundsEnabled,
     parentApprovalRequired, setParentApprovalRequired,
+    routineEndTimes, setRoutineEndTime,
   } = useAppStore();
   const profile = useActiveProfile();
   const { saveAndApply } = useNotifications();
@@ -127,6 +128,13 @@ export default function ParentDashboardScreen({ navigation }) {
   };
 
   const fmtDuration = (s) => (Number(s) >= 60 ? `${Math.round(s / 60)} min` : `${s || 0}s`);
+
+  // Temps élastique : heure de fin optionnelle par routine
+  const handleEndTimeChange = (routineId, v) => {
+    const clean = v.replace(/[^\d:]/g, '').slice(0, 5);
+    setRoutineEndTime(routineId, clean.trim() === '' ? null : clean);
+  };
+  const isEndTimeInvalid = (t) => !!t && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(t);
 
   const askTaskDuration = (routineId, task) => {
     Alert.alert(
@@ -412,6 +420,27 @@ export default function ParentDashboardScreen({ navigation }) {
                 <Text style={[styles.cardSub, { fontSize: 11, marginBottom: 4 }]}>
                   ⏱ Touchez la durée pour l'adapter au rythme de votre enfant
                 </Text>
+
+                <View style={styles.endTimeRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.endTimeLabel}>⏰ Terminer avant (optionnel)</Text>
+                    <Text style={styles.endTimeHint}>
+                      En retard ? Les minuteurs s'adaptent pour finir à l'heure.
+                      En avance ? {profile.childName} gagne du temps libre !
+                    </Text>
+                    {isEndTimeInvalid(routineEndTimes?.[routine.id]) && (
+                      <Text style={styles.endTimeError}>Format attendu : 08:15</Text>
+                    )}
+                  </View>
+                  <TextInput
+                    style={styles.endTimeInput}
+                    value={routineEndTimes?.[routine.id] || ''}
+                    onChangeText={(v) => handleEndTimeChange(routine.id, v)}
+                    placeholder={routine.id === 'morning' ? '08:15' : '20:30'}
+                    placeholderTextColor={COLORS.textMuted}
+                    maxLength={5}
+                  />
+                </View>
                 {routine.defaultTasks.map((task) => {
                   const activeTask = activeTasks.find((t) => t.id === task.id);
                   return (
@@ -893,6 +922,21 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.primaryLight,
   },
   suggestionChipText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  endTimeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#F0FDF4', borderRadius: 10,
+    padding: 10, marginBottom: 6,
+  },
+  endTimeLabel: { fontSize: 13, fontWeight: '800', color: '#065F46' },
+  endTimeHint: { fontSize: 11, color: '#059669', lineHeight: 15, marginTop: 2 },
+  endTimeError: { fontSize: 11, color: COLORS.danger, fontWeight: '700', marginTop: 2 },
+  endTimeInput: {
+    backgroundColor: COLORS.white, borderRadius: 10,
+    borderWidth: 1, borderColor: '#A7F3D0',
+    paddingHorizontal: 10, paddingVertical: 8,
+    fontSize: 16, fontWeight: '800', color: COLORS.textPrimary,
+    width: 72, textAlign: 'center',
+  },
   deleteBtn: { padding: 4 },
   addTaskBtn: {
     marginTop: 10, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.primary,

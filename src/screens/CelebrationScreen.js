@@ -61,7 +61,7 @@ function Confetti() {
 }
 
 export default function CelebrationScreen({ navigation, route }) {
-  const { coinsEarned = 0, leveledUp, newLevel, newBadges = [], routineId } = route.params || {};
+  const { coinsEarned = 0, leveledUp, newLevel, newBadges = [], routineId, freeMinutes = 0 } = route.params || {};
   const profile = useActiveProfile();
   const { recordMood, hasMoodToday } = useAppStore();
   const [askMood] = useState(() => !hasMoodToday());
@@ -114,6 +114,12 @@ export default function CelebrationScreen({ navigation, route }) {
           {leveledUp && (
             <View style={styles.levelUpBox}>
               <Text style={styles.levelUpText}>⭐  NIVEAU {newLevel} !</Text>
+            </View>
+          )}
+
+          {freeMinutes > 0 && (
+            <View style={styles.freeTimeBox}>
+              <Text style={styles.freeTimeText}>🏦  +{freeMinutes} min de temps libre gagnées !</Text>
             </View>
           )}
 
@@ -184,6 +190,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   levelUpText: { fontSize: 20, fontWeight: '900', color: COLORS.white },
+  freeTimeBox: {
+    backgroundColor: '#10B981',
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  freeTimeText: { fontSize: 16, fontWeight: '900', color: COLORS.white },
   badgesBox: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 16,
