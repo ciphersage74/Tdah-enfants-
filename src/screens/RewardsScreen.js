@@ -133,8 +133,10 @@ export default function RewardsScreen({ navigation, route }) {
   const activeRewards = (profile.rewards || []).filter((r) => isParentView || r.active);
 
   const handleAdd = () => {
-    if (!name.trim() || !cost || parseInt(cost) < 10) return;
-    addReward(name.trim(), emoji, parseInt(cost, 10));
+    const n = parseInt(cost, 10);
+    // Number.isFinite rejette NaN ('.' ou 'abc') qui passerait NaN < 10 === false
+    if (!name.trim() || !Number.isFinite(n) || n < 10) return;
+    addReward(name.trim(), emoji, n);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setName(''); setCost(''); setEmoji('🎬'); setAdding(false);
   };

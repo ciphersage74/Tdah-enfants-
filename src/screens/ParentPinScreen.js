@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,9 @@ export default function ParentPinScreen({ navigation }) {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
   const [newPin, setNewPin] = useState('');
+  const failTimerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(failTimerRef.current), []);
 
   const enterDashboard = () => {
     setParentMode(true);
@@ -23,7 +26,7 @@ export default function ParentPinScreen({ navigation }) {
   const fail = (msg) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     setError(msg);
-    setTimeout(() => setInput(''), 500);
+    failTimerRef.current = setTimeout(() => setInput(''), 500);
   };
 
   const handleComplete = (value) => {

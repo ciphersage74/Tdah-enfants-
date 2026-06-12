@@ -32,8 +32,10 @@ export const useNotifications = () => {
     return status === 'granted';
   };
 
-  const parseTime = (timeStr) => {
-    const [h, m] = (timeStr || '07:30').split(':').map(Number);
+  const parseTime = (timeStr, fallback = '07:30') => {
+    // "8h30" ou "abc" donnerait hour: NaN → scheduleNotificationAsync rejette
+    const valid = /^([01]?\d|2[0-3]):[0-5]\d$/.test(timeStr || '');
+    const [h, m] = (valid ? timeStr : fallback).split(':').map(Number);
     return { hour: h, minute: m };
   };
 
@@ -41,9 +43,9 @@ export const useNotifications = () => {
     await Notifications.cancelAllScheduledNotificationsAsync();
   };
 
-  const schedule = async (enabled, timeStr, title, body) => {
+  const schedule = async (enabled, timeStr, fallback, title, body) => {
     if (!enabled) return null;
-    const { hour, minute } = parseTime(timeStr);
+    const { hour, minute } = parseTime(timeStr, fallback);
     return Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
       trigger: { hour, minute, repeats: true },
@@ -57,8 +59,8 @@ export const useNotifications = () => {
     const morningTime = settings.notifMorningTime ?? notifMorningTime;
     const eveningTime = settings.notifEveningTime ?? notifEveningTime;
     await cancelAll();
-    await schedule(morning, morningTime, '☀️ C\'est l\'heure !', 'La quête du matin t\'attend, héros !');
-    await schedule(evening, eveningTime, '🌙 Bonsoir !', 'La quête du soir commence maintenant.');
+    await schedule(morning, morningTime, '07:30', '☀️ C\'est l\'heure !', 'La quête du matin t\'attend, héros !');
+    await schedule(evening, eveningTime, '18:30', '🌙 Bonsoir !', 'La quête du soir commence maintenant.');
   };
 
   const saveAndApply = async (settings) => {

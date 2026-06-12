@@ -8,6 +8,10 @@ const fmtDate = (iso) => {
   return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
 };
 
+// Clé de jour locale — les clés de history sont en heure locale, pas UTC
+const localDay = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 const cell = (entry) => {
   if (!entry?.completed) return '<td class="miss">—</td>';
   if (entry.jokered) return '<td class="joker">🃏 Joker</td>';
@@ -56,7 +60,7 @@ export const buildPractitionerReport = (state, year, month) => {
   const lastDay   = isCurrent ? now : new Date(targetYear, targetMonth + 1, 0);
   const days = [];
   for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
-    const iso = d.toISOString().split('T')[0];
+    const iso = localDay(d);
     days.push({
       iso,
       weekday: d.getDay(),
@@ -74,8 +78,8 @@ export const buildPractitionerReport = (state, year, month) => {
   const eveningRate = activeDays.length ? Math.round((eveningDone / activeDays.length) * 100) : 0;
 
   const jokersUsed = jokersUsedDates.filter((d) => {
-    const date = new Date(d);
-    return date.getFullYear() === targetYear && date.getMonth() === targetMonth;
+    const [y, m] = String(d).split('-').map(Number);
+    return y === targetYear && m - 1 === targetMonth;
   }).length;
 
   const moodCounts = { great: 0, tired: 0, angry: 0 };

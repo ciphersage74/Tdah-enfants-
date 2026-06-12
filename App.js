@@ -14,15 +14,22 @@ function Root() {
   const { requestPermissions, applySchedule } = useNotifications();
 
   useEffect(() => {
-    loadState().then(async () => {
-      const { hasOnboarded } = useAppStore.getState();
-      setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
-      if (hasOnboarded) {
-        const granted = await requestPermissions();
-        if (granted) applySchedule();
+    (async () => {
+      try {
+        await loadState();
+        const { hasOnboarded } = useAppStore.getState();
+        setInitialRoute(hasOnboarded ? 'Home' : 'Onboarding');
+        if (hasOnboarded) {
+          // Échec des notifications ≠ app bloquée sur le spinner
+          try {
+            const granted = await requestPermissions();
+            if (granted) await applySchedule();
+          } catch (_) {}
+        }
+      } finally {
+        setReady(true);
       }
-      setReady(true);
-    });
+    })();
   }, []);
 
   if (!ready) {

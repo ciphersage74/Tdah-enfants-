@@ -88,7 +88,7 @@ export const BADGES = [
     label: 'Acheteur',
     desc: 'Achète ton 1er accessoire',
     emoji: '🛍️',
-    check: (p) => p.unlockedItems.length >= 1,
+    check: (p) => (p.unlockedItems?.length || 0) >= 1,
   },
   {
     id: 'routines_10',

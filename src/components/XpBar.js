@@ -6,7 +6,9 @@ import { LEVEL_THRESHOLDS, getXpForNextLevel } from '../constants/routineData';
 export default function XpBar({ xp, level }) {
   const currentLevelXp = LEVEL_THRESHOLDS[level - 1] || 0;
   const nextLevelXp = getXpForNextLevel(level);
-  const progress = Math.min((xp - currentLevelXp) / (nextLevelXp - currentLevelXp), 1);
+  const span = nextLevelXp - currentLevelXp;
+  // Au niveau max, span vaut 0 → barre pleine plutôt que NaN%
+  const progress = span > 0 ? Math.min(Math.max((xp - currentLevelXp) / span, 0), 1) : 1;
 
   return (
     <View style={styles.container}>

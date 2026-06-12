@@ -90,8 +90,12 @@ export default function ParentDashboardScreen({ navigation }) {
   };
 
   const handleSaveNotifs = async () => {
-    await saveAndApply(notifSettings);
-    Alert.alert('✓ Notifications enregistrées');
+    try {
+      await saveAndApply(notifSettings);
+      Alert.alert('✓ Notifications enregistrées');
+    } catch (_) {
+      Alert.alert('Erreur', "Impossible de programmer les rappels. Vérifiez le format de l'heure (ex. 07:30).");
+    }
   };
 
   const handleExportReport = async (year, month, label) => {
@@ -183,7 +187,7 @@ export default function ParentDashboardScreen({ navigation }) {
                 </View>
               )}
               <Text style={{ fontSize: 14 }}>{d.mood ? getMoodById(d.mood)?.emoji : ' '}</Text>
-              <Text style={styles.dayLabel}>{DAYS[new Date(d.date).getDay()]}</Text>
+              <Text style={styles.dayLabel}>{DAYS[new Date(d.date + 'T00:00:00').getDay()]}</Text>
             </View>
           ))}
         </View>

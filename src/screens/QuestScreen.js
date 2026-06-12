@@ -12,13 +12,17 @@ import { useActiveProfile } from '../hooks/useActiveProfile';
 import BadgeToast from '../components/BadgeToast';
 
 export default function QuestScreen({ navigation, route }) {
-  const { routineId } = route.params;
+  const { routineId } = route.params || {};
   const { earnRewards, completeRoutine, recordTaskDone, checkAndAwardBadges } = useAppStore();
   const profile = useActiveProfile();
 
   const routine = ROUTINES[routineId];
-  // Freeze tasks at mount so profile switches don't break the session
-  const [tasks] = useState(() => profile?.customTasks?.[routineId] || routine.defaultTasks);
+  // Freeze tasks at mount so profile switches don't break the session.
+  // Une liste custom vide ou invalide retombe sur les tâches par défaut.
+  const [tasks] = useState(() => {
+    const custom = profile?.customTasks?.[routineId];
+    return Array.isArray(custom) && custom.length > 0 ? custom : (routine?.defaultTasks || []);
+  });
 
   const [taskIndex, setTaskIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(null);
@@ -31,6 +35,7 @@ export default function QuestScreen({ navigation, route }) {
   const fadeIn = useRef(new Animated.Value(0)).current;
   const btnScale = useRef(new Animated.Value(1)).current;
   const timerRef = useRef(null);
+  const busyRef = useRef(false);
 
   const currentTask = tasks[taskIndex];
   const isLast = taskIndex === tasks.length - 1;
@@ -46,20 +51,26 @@ export default function QuestScreen({ navigation, route }) {
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
+  // Effets de fin de timer hors de l'updater setState (qui doit rester pur)
+  useEffect(() => {
+    if (timeLeft === 0 && timerRunning) {
+      clearInterval(timerRef.current);
+      setTimerRunning(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [timeLeft, timerRunning]);
+
+  // Écran atteint sans routine valide (deep link, params manquants) → retour
+  useEffect(() => {
+    if (!routine || tasks.length === 0) navigation.goBack();
+  }, []);
+
   const startTimer = () => {
     if (timerRunning) return;
     setTimeLeft(currentTask.duration);
     setTimerRunning(true);
     timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timerRef.current);
-          setTimerRunning(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          return 0;
-        }
-        return t - 1;
-      });
+      setTimeLeft((t) => Math.max(t - 1, 0));
     }, 1000);
   };
 
@@ -73,17 +84,21 @@ export default function QuestScreen({ navigation, route }) {
   };
 
   const handleDone = async () => {
+    // Anti double-tap : sinon pièces/XP comptées deux fois et index hors limites
+    if (busyRef.current) return;
+    busyRef.current = true;
+
     if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     pulseDoneBtn();
     recordTaskDone();
 
-    const earned = totalCoins + currentTask.coins;
+    const earned = totalCoins + (currentTask.coins || 0);
     setTotalCoins(earned);
 
     if (isLast) {
       const finalCoins = earned + routine.bonusCoins;
-      const totalXp = tasks.reduce((s, t) => s + t.xp, 0) + routine.bonusXp;
+      const totalXp = tasks.reduce((s, t) => s + (t.xp || 0), 0) + routine.bonusXp;
       const { leveledUp, newLevel } = earnRewards(finalCoins, totalXp);
       completeRoutine(routineId);
       const newBadges = checkAndAwardBadges();
@@ -97,7 +112,8 @@ export default function QuestScreen({ navigation, route }) {
       }
       setTimeLeft(null);
       setTimerRunning(false);
-      setTaskIndex((i) => i + 1);
+      setTaskIndex((i) => Math.min(i + 1, tasks.length - 1));
+      busyRef.current = false;
     }
   };
 
@@ -121,9 +137,11 @@ export default function QuestScreen({ navigation, route }) {
     );
   };
 
+  if (!routine || !currentTask) return null;
+
   const progress = (taskIndex + 1) / tasks.length;
   const gradient = GRADIENTS[routine.gradientKey] || GRADIENTS.primary;
-  const timerRatio = timeLeft !== null ? timeLeft / currentTask.duration : 0;
+  const timerRatio = timeLeft !== null && currentTask.duration > 0 ? timeLeft / currentTask.duration : 0;
 
   return (
     <LinearGradient colors={gradient} style={styles.gradient}>

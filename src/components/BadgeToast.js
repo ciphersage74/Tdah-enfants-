@@ -8,7 +8,7 @@ export default function BadgeToast({ badge, visible, onHide }) {
 
   useEffect(() => {
     if (!visible || !badge) return;
-    Animated.sequence([
+    const anim = Animated.sequence([
       Animated.parallel([
         Animated.spring(slideY, { toValue: 0, tension: 80, friction: 12, useNativeDriver: true }),
         Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -18,7 +18,9 @@ export default function BadgeToast({ badge, visible, onHide }) {
         Animated.timing(slideY, { toValue: -80, duration: 300, useNativeDriver: true }),
         Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]),
-    ]).start(() => onHide?.());
+    ]);
+    anim.start(({ finished }) => { if (finished) onHide?.(); });
+    return () => anim.stop();
   }, [visible, badge]);
 
   if (!badge) return null;

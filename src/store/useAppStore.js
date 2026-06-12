@@ -46,6 +46,13 @@ const JOKERS_PER_WEEK = 2;
 const generateRecoveryCode = () =>
   String(Math.floor(10000000 + Math.random() * 90000000));
 
+// Clé de jour en heure LOCALE (toISOString donne le jour UTC : une routine
+// finie à 00h30 en France serait comptée la veille et casserait la série)
+export const localDay = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const localYesterday = () => localDay(new Date(Date.now() - 86400000));
+
 // Monday 00:00 of the current week
 const getWeekStart = () => {
   const now = new Date();
@@ -55,20 +62,28 @@ const getWeekStart = () => {
   return monday;
 };
 
-// Cleans up loaded data: stale streaks and shop items that no longer exist
+// Cleans up loaded data: stale streaks, shop items that no longer exist,
+// and non-array fields from hand-edited or corrupted backups
 const normalizeState = (data) => {
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const today = localDay();
+  const yesterday = localYesterday();
   const next = { ...data };
   // A streak is only alive if the last completion was today or yesterday
   if (next.lastCompletedDate && next.lastCompletedDate < yesterday && next.lastCompletedDate !== today) {
     next.streak = 0;
   }
-  if (Array.isArray(next.unlockedItems)) {
-    next.unlockedItems = next.unlockedItems.filter((id) => !!getShopItemById(id));
-  }
-  if (Array.isArray(next.equippedItems)) {
-    next.equippedItems = next.equippedItems.filter((id) => !!getShopItemById(id));
+  next.unlockedItems = Array.isArray(next.unlockedItems)
+    ? next.unlockedItems.filter((id) => !!getShopItemById(id)) : [];
+  next.equippedItems = Array.isArray(next.equippedItems)
+    ? next.equippedItems.filter((id) => !!getShopItemById(id)) : [];
+  if (!Array.isArray(next.badges)) next.badges = [];
+  if (!Array.isArray(next.rewards)) next.rewards = [];
+  if (!Array.isArray(next.jokersUsedDates)) next.jokersUsedDates = [];
+  if (!Array.isArray(next.restDays)) next.restDays = [];
+  if (!next.history || typeof next.history !== 'object') next.history = {};
+  if (!next.moodLog || typeof next.moodLog !== 'object') next.moodLog = {};
+  if (!next.customTasks || typeof next.customTasks !== 'object') {
+    next.customTasks = defaultState.customTasks;
   }
   // Les utilisateurs existants n'ont pas encore de code de secours
   if (!next.recoveryCode) {
@@ -173,8 +188,8 @@ export const useAppStore = create((set, get) => ({
 
   completeRoutine: (routineId) => {
     const s = get();
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const today = localDay();
+    const yesterday = localYesterday();
     const history = { ...s.history };
     if (!history[today]) history[today] = {};
     history[today][routineId] = { completed: true, completedAt: new Date().toISOString() };
@@ -196,32 +211,33 @@ export const useAppStore = create((set, get) => ({
   },
 
   isRoutineCompletedToday: (routineId) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     return !!get().history?.[today]?.[routineId]?.completed;
   },
 
   isRoutineJokeredToday: (routineId) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     return !!get().history?.[today]?.[routineId]?.jokered;
   },
 
   // ─── Jokers (anti-frustration) ────────────────────────────────
   getJokersLeft: () => {
-    const weekStart = getWeekStart();
-    const used = (get().jokersUsedDates || []).filter((d) => new Date(d) >= weekStart).length;
+    // Comparaison de chaînes locales : new Date('YYYY-MM-DD') serait parsé en UTC
+    const weekStartStr = localDay(getWeekStart());
+    const used = (get().jokersUsedDates || []).filter((d) => d >= weekStartStr).length;
     return Math.max(0, JOKERS_PER_WEEK - used);
   },
 
   // Marks the routine as passed without rewards; the streak survives.
   useJoker: (routineId) => {
     const s = get();
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     if (s.history?.[today]?.[routineId]?.completed) return false;
-    const weekStart = getWeekStart();
-    const used = (s.jokersUsedDates || []).filter((d) => new Date(d) >= weekStart).length;
+    const weekStartStr = localDay(getWeekStart());
+    const used = (s.jokersUsedDates || []).filter((d) => d >= weekStartStr).length;
     if (used >= JOKERS_PER_WEEK) return false;
 
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const yesterday = localYesterday();
     const history = { ...s.history };
     if (!history[today]) history[today] = {};
     history[today][routineId] = { completed: true, jokered: true, completedAt: new Date().toISOString() };
@@ -241,14 +257,14 @@ export const useAppStore = create((set, get) => ({
   // ─── Météo des émotions ───────────────────────────────────────
   recordMood: (mood) => {
     const s = get();
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const next = { ...s, moodLog: { ...(s.moodLog || {}), [today]: mood } };
     set(next);
     save(next);
   },
 
   hasMoodToday: () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     return !!get().moodLog?.[today];
   },
 
@@ -406,7 +422,7 @@ export const useAppStore = create((set, get) => ({
     const { history, moodLog } = get();
     const days = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+      const d = localDay(new Date(Date.now() - i * 86400000));
       days.push({
         date: d,
         morning: !!history?.[d]?.morning?.completed,

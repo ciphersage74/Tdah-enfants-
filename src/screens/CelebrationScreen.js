@@ -13,7 +13,7 @@ const { width, height } = Dimensions.get('window');
 const CONFETTI_COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#A8E063', '#C084FC', '#FBBF24'];
 
 function ConfettiPiece({ index }) {
-  const x = useRef(new Animated.Value(Math.random() * width)).current;
+  const startX = useRef(Math.random() * width).current;
   const y = useRef(new Animated.Value(-20)).current;
   const op = useRef(new Animated.Value(0)).current;
   const rot = useRef(new Animated.Value(0)).current;
@@ -38,8 +38,9 @@ function ConfettiPiece({ index }) {
   return (
     <Animated.View
       style={{
-        position: 'absolute', left: x, top: y, opacity: op,
-        transform: [{ rotate: spin }],
+        position: 'absolute', left: startX, top: 0, opacity: op,
+        // Le driver natif ne supporte que transform/opacity — jamais top/left animés
+        transform: [{ translateY: y }, { rotate: spin }],
         width: size, height: size,
         backgroundColor: color,
         borderRadius: isCircle ? size / 2 : 1,
@@ -59,7 +60,7 @@ function Confetti() {
 }
 
 export default function CelebrationScreen({ navigation, route }) {
-  const { coinsEarned, leveledUp, newLevel, newBadges = [], routineId } = route.params;
+  const { coinsEarned = 0, leveledUp, newLevel, newBadges = [], routineId } = route.params || {};
   const profile = useActiveProfile();
   const { recordMood, hasMoodToday } = useAppStore();
   const [askMood] = useState(() => !hasMoodToday());
