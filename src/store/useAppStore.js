@@ -27,6 +27,8 @@ const defaultState = {
   history: {},
   rewards: [],
   parentPin: '1234',
+  recoveryCode: null,
+  ratingPromptCount: 0,
   isPremium: false,
   isParentMode: false,
   notifMorningEnabled: false,
@@ -39,6 +41,10 @@ const defaultState = {
 };
 
 const JOKERS_PER_WEEK = 2;
+
+// Code de secours à 8 chiffres pour réinitialiser le code parent oublié
+const generateRecoveryCode = () =>
+  String(Math.floor(10000000 + Math.random() * 90000000));
 
 // Monday 00:00 of the current week
 const getWeekStart = () => {
@@ -63,6 +69,10 @@ const normalizeState = (data) => {
   }
   if (Array.isArray(next.equippedItems)) {
     next.equippedItems = next.equippedItems.filter((id) => !!getShopItemById(id));
+  }
+  // Les utilisateurs existants n'ont pas encore de code de secours
+  if (!next.recoveryCode) {
+    next.recoveryCode = generateRecoveryCode();
   }
   return next;
 };
@@ -139,7 +149,10 @@ export const useAppStore = create((set, get) => ({
 
   // ─── Onboarding ───────────────────────────────────────────────
   completeOnboarding: (childName, childAge, avatarId, parentPin, gender = 'boy') => {
-    const next = { ...get(), hasOnboarded: true, childName, childAge, avatarId, parentPin, gender };
+    const next = {
+      ...get(), hasOnboarded: true, childName, childAge, avatarId, parentPin, gender,
+      recoveryCode: get().recoveryCode || generateRecoveryCode(),
+    };
     set(next);
     save(next);
   },
@@ -355,6 +368,26 @@ export const useAppStore = create((set, get) => ({
   },
 
   setParentMode: (v) => set({ isParentMode: v }),
+
+  setParentPin: (pin) => {
+    const next = { ...get(), parentPin: pin };
+    set(next);
+    save(next);
+  },
+
+  recordRatingPrompt: () => {
+    const next = { ...get(), ratingPromptCount: (get().ratingPromptCount || 0) + 1 };
+    set(next);
+    save(next);
+  },
+
+  // Restaure une sauvegarde exportée (remplace toutes les données actuelles)
+  importState: (data) => {
+    const normalized = normalizeState({ ...defaultState, ...data });
+    const next = { ...normalized, isParentMode: true };
+    set(next);
+    save(next);
+  },
 
   unlockPremium: () => {
     const next = { ...get(), isPremium: true };

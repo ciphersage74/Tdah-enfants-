@@ -12,6 +12,7 @@ import PaywallScreen from '../screens/PaywallScreen';
 import BadgesScreen from '../screens/BadgesScreen';
 import ShopScreen from '../screens/ShopScreen';
 import RewardsScreen from '../screens/RewardsScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -56,6 +57,11 @@ export default function AppNavigator({ initialRoute }) {
           options={{ animation: 'slide_from_bottom' }}
         />
         <Stack.Screen name="Rewards" component={RewardsScreen} />
+        <Stack.Screen
+          name="Privacy"
+          component={PrivacyScreen}
+          options={{ animation: 'slide_from_bottom' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

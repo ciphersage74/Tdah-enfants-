@@ -9,6 +9,7 @@ import { COLORS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
 import { getMoodById } from '../constants/moodData';
 import { buildPractitionerReport, getAvailableMonths } from '../utils/reportGenerator';
+import { exportBackup, importBackup } from '../utils/backup';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import { useNotifications } from '../hooks/useNotifications';
@@ -38,6 +39,7 @@ export default function ParentDashboardScreen({ navigation }) {
     isPremium, updateCustomTasks, addCustomTask, removeCustomTask, setParentMode,
     getWeeklyStats, unlockPremium, restDays, updateRestDays, getJokersLeft,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
+    importState,
   } = useAppStore();
   const profile = useActiveProfile();
   const { saveAndApply } = useNotifications();
@@ -111,6 +113,37 @@ export default function ParentDashboardScreen({ navigation }) {
     } finally {
       setReportLoading(null);
     }
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      await exportBackup(useAppStore.getState());
+    } catch (_) {
+      Alert.alert('Erreur', "Impossible de créer la sauvegarde. Réessayez.");
+    }
+  };
+
+  const handleImportBackup = () => {
+    Alert.alert(
+      '⚠️ Restaurer une sauvegarde',
+      "Toutes les données actuelles (progression, pièces, historique…) seront remplacées par celles de la sauvegarde. Continuer ?",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Restaurer',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await importBackup();
+            if (result.ok) {
+              importState(result.data);
+              Alert.alert('✓ Sauvegarde restaurée', `La progression de ${result.data.childName || 'votre enfant'} a été restaurée.`);
+            } else if (result.error !== 'cancelled') {
+              Alert.alert('Fichier invalide', "Ce fichier n'est pas une sauvegarde FocusHéros valide.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   // ── Stats ──────────────────────────────────────────────────────
@@ -388,6 +421,43 @@ export default function ParentDashboardScreen({ navigation }) {
           </View>
         );
       })}
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>💾 Sauvegarde des données</Text>
+        <Text style={[styles.cardSub, { marginBottom: 12 }]}>
+          Toutes les données sont stockées sur ce téléphone uniquement. Exportez régulièrement une
+          sauvegarde (Google Drive, email…) pour ne rien perdre en cas de changement ou perte du téléphone.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.backupBtn} onPress={handleExportBackup}>
+            <Text style={styles.backupBtnText}>⬆️ Exporter</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.backupBtn, styles.backupBtnSecondary]} onPress={handleImportBackup}>
+            <Text style={[styles.backupBtnText, { color: COLORS.primary }]}>⬇️ Restaurer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: '#FFF7ED' }]}>
+        <Text style={[styles.cardTitle, { color: '#9A3412' }]}>🆘 Code de secours</Text>
+        <Text style={[styles.cardSub, { color: '#B45309', marginBottom: 10 }]}>
+          Si vous oubliez votre code parent, ce code à 8 chiffres permet d'en créer un nouveau.
+          Notez-le quelque part en sécurité (hors de portée de votre enfant).
+        </Text>
+        <Text style={styles.recoveryCode}>{useAppStore.getState().recoveryCode || '—'}</Text>
+      </View>
+
+      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Privacy')}>
+        <View style={styles.row}>
+          <Text style={{ fontSize: 22 }}>🛡️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Confidentialité</Text>
+            <Text style={styles.cardSub}>Zéro donnée collectée — tout reste sur votre téléphone</Text>
+          </View>
+          <Text style={{ fontSize: 22, color: COLORS.textMuted }}>›</Text>
+        </View>
+      </TouchableOpacity>
+
       <View style={{ height: 20 }} />
     </ScrollView>
     );
@@ -630,6 +700,18 @@ const styles = StyleSheet.create({
   },
   currentBadgeText: { fontSize: 10, fontWeight: '700', color: '#065F46' },
   downloadBtn: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  backupBtn: {
+    flex: 1, backgroundColor: COLORS.primary, borderRadius: 12,
+    paddingVertical: 12, alignItems: 'center',
+  },
+  backupBtnSecondary: {
+    backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.primary,
+  },
+  backupBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.white },
+  recoveryCode: {
+    fontSize: 28, fontWeight: '900', color: '#9A3412', textAlign: 'center',
+    letterSpacing: 4, backgroundColor: COLORS.white, borderRadius: 10, paddingVertical: 10,
+  },
   featureItem: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
   featureText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
   restDayRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },

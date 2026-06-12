@@ -7,55 +7,107 @@ import { useAppStore } from '../store/useAppStore';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
 
+// mode: 'enter' (code normal) | 'recovery' (code de secours) | 'newpin' | 'confirm'
 export default function ParentPinScreen({ navigation }) {
-  const { parentPin, setParentMode } = useAppStore();
+  const { parentPin, recoveryCode, setParentMode, setParentPin } = useAppStore();
+  const [mode, setMode] = useState('enter');
   const [input, setInput] = useState('');
-  const [error, setError] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [error, setError] = useState('');
+  const [newPin, setNewPin] = useState('');
+
+  const enterDashboard = () => {
+    setParentMode(true);
+    navigation.replace('ParentDashboard');
+  };
+
+  const fail = (msg) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    setError(msg);
+    setTimeout(() => setInput(''), 500);
+  };
+
+  const handleComplete = (value) => {
+    if (mode === 'enter') {
+      if (value === parentPin) enterDashboard();
+      else fail('Code incorrect, réessayez');
+    } else if (mode === 'recovery') {
+      if (value === recoveryCode) {
+        setInput('');
+        setError('');
+        setMode('newpin');
+      } else {
+        fail('Code de secours incorrect');
+      }
+    } else if (mode === 'newpin') {
+      setNewPin(value);
+      setInput('');
+      setMode('confirm');
+    } else if (mode === 'confirm') {
+      if (value === newPin) {
+        setParentPin(value);
+        enterDashboard();
+      } else {
+        setInput('');
+        setNewPin('');
+        setMode('newpin');
+        fail('Les codes ne correspondent pas');
+      }
+    }
+  };
 
   const handleKey = (key) => {
     if (key === '') return;
     Haptics.selectionAsync();
     if (key === '⌫') {
       setInput((s) => s.slice(0, -1));
-      setError(false);
+      setError('');
       return;
     }
-    if (input.length >= 4) return;
+    const maxLen = mode === 'recovery' ? 8 : 4;
+    if (input.length >= maxLen) return;
     const next = input + key;
     setInput(next);
-    if (next.length === 4) {
-      if (next === parentPin) {
-        setParentMode(true);
-        navigation.replace('ParentDashboard');
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        setError(true);
-        setShake(true);
-        setTimeout(() => { setInput(''); setShake(false); }, 600);
-      }
-    }
+    setError('');
+    if (next.length === maxLen) handleComplete(next);
   };
+
+  const startReset = () => {
+    setInput('');
+    setError('');
+    setMode('recovery');
+  };
+
+  const TITLES = {
+    enter:    { emoji: '🔐', title: 'Mode Parent',     sub: 'Entrez votre code à 4 chiffres' },
+    recovery: { emoji: '🆘', title: 'Code de secours', sub: 'Entrez le code de secours à 8 chiffres\n(visible dans Mode Parent → Config)' },
+    newpin:   { emoji: '🆕', title: 'Nouveau code',    sub: 'Choisissez un nouveau code à 4 chiffres' },
+    confirm:  { emoji: '✅', title: 'Confirmation',    sub: 'Entrez le même code une seconde fois' },
+  };
+  const t = TITLES[mode];
+  const dotCount = mode === 'recovery' ? 8 : 4;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-        <Text style={styles.closeText}>✕ Fermer</Text>
+      <TouchableOpacity
+        style={styles.closeBtn}
+        onPress={() => (mode === 'enter' ? navigation.goBack() : (setMode('enter'), setInput(''), setError('')))}
+      >
+        <Text style={styles.closeText}>{mode === 'enter' ? '✕ Fermer' : '‹ Retour'}</Text>
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.emoji}>🔐</Text>
-        <Text style={styles.title}>Mode Parent</Text>
-        <Text style={styles.subtitle}>Entrez votre code à 4 chiffres</Text>
+        <Text style={styles.emoji}>{t.emoji}</Text>
+        <Text style={styles.title}>{t.title}</Text>
+        <Text style={styles.subtitle}>{t.sub}</Text>
 
         {/* Dots */}
-        <View style={[styles.dotsRow, shake && styles.shake]}>
-          {[0, 1, 2, 3].map((i) => (
-            <View key={i} style={[styles.dot, i < input.length && styles.dotFilled, error && styles.dotError]} />
+        <View style={styles.dotsRow}>
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <View key={i} style={[styles.dot, i < input.length && styles.dotFilled, !!error && styles.dotError]} />
           ))}
         </View>
 
-        {error && <Text style={styles.errorText}>Code incorrect, réessayez</Text>}
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
 
         {/* Keypad */}
         <View style={styles.keypad}>
@@ -70,6 +122,12 @@ export default function ParentPinScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </View>
+
+        {mode === 'enter' && (
+          <TouchableOpacity onPress={startReset} style={styles.forgotBtn}>
+            <Text style={styles.forgotText}>Code oublié ?</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -103,13 +161,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
     marginBottom: 36,
+    textAlign: 'center',
   },
   dotsRow: {
     flexDirection: 'row',
     gap: 16,
     marginBottom: 16,
   },
-  shake: {},
   dot: {
     width: 18,
     height: 18,
@@ -163,5 +221,11 @@ const styles = StyleSheet.create({
   keyBackspace: {
     fontSize: 20,
     color: COLORS.textSecondary,
+  },
+  forgotBtn: { marginTop: 24, padding: 8 },
+  forgotText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textDecorationLine: 'underline',
   },
 });
