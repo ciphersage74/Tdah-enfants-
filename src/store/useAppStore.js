@@ -115,6 +115,8 @@ const normalizeState = (data) => {
   next.totalRoutinesDone = Number.isFinite(Number(next.totalRoutinesDone)) ? Number(next.totalRoutinesDone) : 0;
   next.totalCoinsEarned = Number.isFinite(Number(next.totalCoinsEarned)) ? Number(next.totalCoinsEarned) : next.coins;
   if (typeof next.parentPin !== 'string') next.parentPin = '1234';
+  if (typeof next.soundsEnabled !== 'boolean') next.soundsEnabled = true;
+  if (typeof next.parentApprovalRequired !== 'boolean') next.parentApprovalRequired = false;
   // Les utilisateurs existants n'ont pas encore de code de secours
   if (!next.recoveryCode) {
     next.recoveryCode = generateRecoveryCode();
@@ -209,7 +211,7 @@ export const useAppStore = create((set, get) => ({
     const newCoins = (Number(s.coins) || 0) + (Number(coins) || 0);
     const newLevel = getLevelFromXp(newXp);
     const leveledUp = newLevel > s.level;
-    const totalCoinsEarned = s.totalCoinsEarned + coins;
+    const totalCoinsEarned = Number(s.totalCoinsEarned) + Number(coins);
     const next = { ...s, xp: newXp, coins: newCoins, level: newLevel, totalCoinsEarned };
     set(next);
     save(next);
@@ -477,14 +479,15 @@ export const useAppStore = create((set, get) => ({
     const { history, moodLog } = get();
     const days = [];
     for (let i = 6; i >= 0; i--) {
-      const d = localDay(new Date(Date.now() - i * 86400000));
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const dateStr = localDay(d);
       days.push({
-        date: d,
-        morning: !!history?.[d]?.morning?.completed,
-        evening: !!history?.[d]?.evening?.completed,
-        morningJokered: !!history?.[d]?.morning?.jokered,
-        eveningJokered: !!history?.[d]?.evening?.jokered,
-        mood: moodLog?.[d] || null,
+        date: dateStr,
+        morning: !!history?.[dateStr]?.morning?.completed,
+        evening: !!history?.[dateStr]?.evening?.completed,
+        morningJokered: !!history?.[dateStr]?.morning?.jokered,
+        eveningJokered: !!history?.[dateStr]?.evening?.jokered,
+        mood: moodLog?.[dateStr] || null,
       });
     }
     const done = days.filter((d) => d.morning || d.evening).length;

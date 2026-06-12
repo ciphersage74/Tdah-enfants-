@@ -227,35 +227,34 @@ export default function QuestScreen({ navigation, route }) {
   const handleSkip = () => {
     if (busyRef.current) return;
     busyRef.current = true;
-    const warnCoins = isLast && totalCoins > 0;
-    Alert.alert(
-      'Passer ?',
-      warnCoins
-        ? `Tu vas perdre les ${totalCoins} pièces accumulées cette session. Continue ?`
-        : 'Pas de pièces pour cette tâche.',
-      [
-        {
-          text: 'Annuler',
-          style: 'cancel',
-          onPress: () => { busyRef.current = false; },
+    const title = isLast ? 'Abandonner la quête ?' : 'Passer cette tâche ?';
+    const message = isLast
+      ? (totalCoins > 0
+          ? `Tu vas abandonner la quête et perdre les ${totalCoins} pièces accumulées.`
+          : 'Tu vas abandonner la quête sans récompenses.')
+      : 'Tu ne gagneras pas de pièces pour cette tâche.';
+    Alert.alert(title, message, [
+      {
+        text: 'Annuler',
+        style: 'cancel',
+        onPress: () => { busyRef.current = false; },
+      },
+      {
+        text: isLast ? 'Abandonner' : 'Passer',
+        style: 'destructive',
+        onPress: () => {
+          if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
+          setTimeLeft(null);
+          setTimerExpired(false);
+          if (isLast) {
+            navigation.goBack();
+          } else {
+            setTaskIndex((i) => i + 1);
+            busyRef.current = false;
+          }
         },
-        {
-          text: 'Passer',
-          style: 'destructive',
-          onPress: () => {
-            if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
-            setTimeLeft(null);
-            setTimerExpired(false);
-            if (isLast) {
-              navigation.goBack();
-            } else {
-              setTaskIndex((i) => i + 1);
-              busyRef.current = false;
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   if (!routine || !currentTask) return null;
