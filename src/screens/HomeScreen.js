@@ -63,7 +63,19 @@ export default function HomeScreen({ navigation }) {
 
   const handleRoutinePress = (routineId) => {
     const routine = ROUTINES[routineId];
-    if (routine.premium && !isPremium) { navigation.navigate('Paywall'); return; }
+    if (routine.premium && !isPremium) {
+      // Barrière parentale obligatoire (programme Familles Google Play) :
+      // jamais d'écran d'achat accessible directement à l'enfant
+      Alert.alert(
+        '🔒 Quête du Soir',
+        'Cette quête fait partie de la version Premium.\nDemande à un parent de la débloquer !',
+        [
+          { text: 'Plus tard', style: 'cancel' },
+          { text: '👤 Je suis un parent', onPress: () => navigation.navigate('ParentPin', { next: 'Paywall' }) },
+        ]
+      );
+      return;
+    }
     if (isRoutineCompletedToday(routineId)) return;
     navigation.navigate('Quest', { routineId });
   };

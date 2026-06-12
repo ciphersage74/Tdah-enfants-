@@ -8,7 +8,7 @@ import { useAppStore } from '../store/useAppStore';
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
 
 // mode: 'enter' (code normal) | 'recovery' (code de secours) | 'newpin' | 'confirm'
-export default function ParentPinScreen({ navigation }) {
+export default function ParentPinScreen({ navigation, route }) {
   const { parentPin, recoveryCode, setParentMode, setParentPin } = useAppStore();
   const [mode, setMode] = useState('enter');
   const [input, setInput] = useState('');
@@ -20,7 +20,9 @@ export default function ParentPinScreen({ navigation }) {
 
   const enterDashboard = () => {
     setParentMode(true);
-    navigation.replace('ParentDashboard');
+    // `next` permet d'utiliser cet écran comme barrière parentale
+    // devant d'autres destinations (ex. Paywall depuis l'écran enfant)
+    navigation.replace(route.params?.next || 'ParentDashboard');
   };
 
   const fail = (msg) => {
