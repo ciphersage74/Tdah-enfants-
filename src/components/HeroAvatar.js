@@ -19,14 +19,12 @@ const AVATAR_IMAGES = {
 };
 
 // Layers 512×512 transparents, déjà positionnés sur le canevas.
-// Items sans image (emoji fallback) : graduation, galaxy.
 const ITEM_IMAGES = {
   // ── Chapeaux ─────────────────────────────────────────
   party:      require('../../assets/items/hat_party.png'),
   cowboy:     require('../../assets/items/hat_cowboy.png'),
   tophat:     require('../../assets/items/hat_tophat.png'),
   crown:      require('../../assets/items/hat_crown.png'),
-  // graduation: pas encore d'image → emoji fallback
   helm:       require('../../assets/items/hat_helm.png'),
   witch:      require('../../assets/items/hat_witch.png'),
   tiara:      require('../../assets/items/hat_tiara.png'),
@@ -48,7 +46,6 @@ const ITEM_IMAGES = {
   rainbow:    require('../../assets/items/magic_rainbow.png'),
   star_gold:  require('../../assets/items/magic_star_gold.png'),
   gem:        require('../../assets/items/magic_gem.png'),
-  // galaxy: image avec damier incrusté → emoji fallback en attendant un ré-export
   // ── Compagnons ───────────────────────────────────────
   cat:        require('../../assets/items/companion_cat.png'),
   rabbit:     require('../../assets/items/companion_rabbit.png'),
@@ -152,7 +149,7 @@ export default function HeroAvatar({ avatarId = 'superhero', size = 80, showBord
         />
       )}
 
-      {/* Emoji fallback pour les items sans image (graduation, galaxy) */}
+      {/* Emoji fallback de sécurité si un item n'a pas d'image */}
       {!ITEM_IMAGES[hatItem?.id] && hatItem && (
         <Text style={[styles.itemEmoji, { fontSize: size * 0.34, top: -size * 0.14, alignSelf: 'center' }]}>
           {hatItem.emoji}

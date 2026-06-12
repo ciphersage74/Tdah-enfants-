@@ -11,7 +11,6 @@ export const SHOP_ITEMS = [
   { id: 'cowboy',     label: 'Cowboy',             emoji: '🤠', price: 60,  position: 'top',   category: 'hats',       requiredLevel: 1 },
   { id: 'tophat',     label: 'Chapeau haut-de-forme', emoji: '🎩', price: 70, position: 'top', category: 'hats',       requiredLevel: 2 },
   { id: 'crown',      label: 'Couronne',           emoji: '👑', price: 90,  position: 'top',   category: 'hats',       requiredLevel: 2 },
-  { id: 'graduation', label: 'Toque de diplômé',   emoji: '🎓', price: 100, position: 'top',   category: 'hats',       requiredLevel: 3 },
   { id: 'helm',       label: 'Casque guerrier',    emoji: '⛑️', price: 120, position: 'top',   category: 'hats',       requiredLevel: 3 },
   { id: 'witch',      label: 'Chapeau sorcière',   emoji: '🪄', price: 130, position: 'top',   category: 'hats',       requiredLevel: 4 },
   { id: 'tiara',      label: 'Tiare de princesse', emoji: '💍', price: 160, position: 'top',   category: 'hats',       requiredLevel: 5 },
@@ -35,7 +34,6 @@ export const SHOP_ITEMS = [
   { id: 'rainbow',    label: 'Arc-en-ciel',        emoji: '🌈', price: 220, position: 'top',   category: 'magic',      requiredLevel: 5 },
   { id: 'star_gold',  label: 'Étoile dorée',       emoji: '⭐', price: 280, position: 'top',   category: 'magic',      requiredLevel: 5 },
   { id: 'gem',        label: 'Diamant',            emoji: '💎', price: 400, position: 'top',   category: 'magic',      requiredLevel: 7 },
-  { id: 'galaxy',     label: 'Galaxie',            emoji: '🌌', price: 500, position: 'top',   category: 'magic',      requiredLevel: 9 },
 
   // ─── Compagnons ──────────────────────────────────────────────
   { id: 'cat',        label: 'Petit chat',         emoji: '🐱', price: 100, position: 'right', category: 'companions', requiredLevel: 2 },
