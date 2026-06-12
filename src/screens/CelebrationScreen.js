@@ -12,36 +12,48 @@ import HeroAvatar from '../components/HeroAvatar';
 const { width, height } = Dimensions.get('window');
 const CONFETTI_COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#A8E063', '#C084FC', '#FBBF24'];
 
+function ConfettiPiece({ index }) {
+  const x = useRef(new Animated.Value(Math.random() * width)).current;
+  const y = useRef(new Animated.Value(-20)).current;
+  const op = useRef(new Animated.Value(0)).current;
+  const rot = useRef(new Animated.Value(0)).current;
+  const size = useRef(7 + Math.random() * 9).current;
+  const isCircle = useRef(Math.random() > 0.5).current;
+  const fallDuration = useRef(2200 + Math.random() * 1400).current;
+  const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(index * 100),
+      Animated.parallel([
+        Animated.timing(op, { toValue: 1, duration: 100, useNativeDriver: true }),
+        Animated.timing(y, { toValue: height + 30, duration: fallDuration, useNativeDriver: true }),
+        Animated.timing(rot, { toValue: 540, duration: 2000, useNativeDriver: true }),
+      ]),
+      Animated.timing(op, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const spin = rot.interpolate({ inputRange: [0, 540], outputRange: ['0deg', '540deg'] });
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute', left: x, top: y, opacity: op,
+        transform: [{ rotate: spin }],
+        width: size, height: size,
+        backgroundColor: color,
+        borderRadius: isCircle ? size / 2 : 1,
+      }}
+    />
+  );
+}
+
 function Confetti() {
-  const pieces = Array.from({ length: 20 });
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {pieces.map((_, i) => {
-        const x = useRef(new Animated.Value(Math.random() * width)).current;
-        const y = useRef(new Animated.Value(-20)).current;
-        const op = useRef(new Animated.Value(0)).current;
-        const rot = useRef(new Animated.Value(0)).current;
-        const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-        const size = 7 + Math.random() * 9;
-        useEffect(() => {
-          Animated.sequence([
-            Animated.delay(i * 100),
-            Animated.parallel([
-              Animated.timing(op, { toValue: 1, duration: 100, useNativeDriver: true }),
-              Animated.timing(y, { toValue: height + 30, duration: 2200 + Math.random() * 1400, useNativeDriver: true }),
-              Animated.timing(rot, { toValue: 540, duration: 2000, useNativeDriver: true }),
-            ]),
-            Animated.timing(op, { toValue: 0, duration: 200, useNativeDriver: true }),
-          ]).start();
-        }, []);
-        const spin = rot.interpolate({ inputRange: [0, 540], outputRange: ['0deg', '540deg'] });
-        return (
-          <Animated.View
-            key={i}
-            style={{ position: 'absolute', left: x, top: y, opacity: op, transform: [{ rotate: spin }], width: size, height: size, backgroundColor: color, borderRadius: Math.random() > 0.5 ? size / 2 : 1 }}
-          />
-        );
-      })}
+      {Array.from({ length: 20 }, (_, i) => (
+        <ConfettiPiece key={i} index={i} />
+      ))}
     </View>
   );
 }
