@@ -62,6 +62,6 @@ export const PREMIUM_FEATURES = [
   { emoji: '🌙', title: 'Routine du soir', desc: 'Douche, devoirs, coucher sans crise' },
   { emoji: '📊', title: 'Tableau de bord complet', desc: 'Stats hebdo, points de blocage, streaks' },
   { emoji: '⚙️', title: 'Routines personnalisables', desc: 'Ajoute / supprime des tâches' },
-  { emoji: '📋', title: 'Rapport hebdomadaire', desc: 'À partager avec le pédiatre' },
+  { emoji: '📄', title: 'Rapport PDF praticien', desc: '30 jours de suivi à partager avec le pédiatre ou psy' },
   { emoji: '🔔', title: 'Rappels intelligents', desc: 'Notifications à heure personnalisée' },
 ];

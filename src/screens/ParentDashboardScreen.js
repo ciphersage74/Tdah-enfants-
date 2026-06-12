@@ -3,8 +3,12 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { COLORS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
+import { getMoodById } from '../constants/moodData';
+import { buildPractitionerReport } from '../utils/reportGenerator';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import { useNotifications } from '../hooks/useNotifications';
@@ -32,7 +36,7 @@ const DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 export default function ParentDashboardScreen({ navigation }) {
   const {
     isPremium, updateCustomTasks, addCustomTask, removeCustomTask, setParentMode,
-    getWeeklyStats, unlockPremium, restDays, updateRestDays,
+    getWeeklyStats, unlockPremium, restDays, updateRestDays, getJokersLeft,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   } = useAppStore();
   const profile = useActiveProfile();
@@ -82,6 +86,28 @@ export default function ParentDashboardScreen({ navigation }) {
     Alert.alert('✓ Notifications enregistrées');
   };
 
+  const handleExportReport = async () => {
+    if (!isPremium) {
+      navigation.navigate('Paywall');
+      return;
+    }
+    try {
+      const html = buildPractitionerReport(useAppStore.getState());
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Rapport FocusHéros — ${profile.childName}`,
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        Alert.alert('✓ Rapport généré', `PDF enregistré : ${uri}`);
+      }
+    } catch (e) {
+      Alert.alert('Erreur', "Impossible de générer le rapport. Réessayez.");
+    }
+  };
+
   // ── Stats ──────────────────────────────────────────────────────
   const renderStats = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
@@ -106,18 +132,46 @@ export default function ParentDashboardScreen({ navigation }) {
           {stats.days.map((d, i) => (
             <View key={i} style={styles.dayCol}>
               <View style={[styles.dayDot, d.morning ? styles.dayDone : styles.dayEmpty]}>
-                <Text style={{ fontSize: 11 }}>☀️</Text>
+                <Text style={{ fontSize: 11 }}>{d.morningJokered ? '🃏' : '☀️'}</Text>
               </View>
               {isPremium && (
                 <View style={[styles.dayDot, d.evening ? styles.dayDone : styles.dayEmpty]}>
-                  <Text style={{ fontSize: 11 }}>🌙</Text>
+                  <Text style={{ fontSize: 11 }}>{d.eveningJokered ? '🃏' : '🌙'}</Text>
                 </View>
               )}
+              <Text style={{ fontSize: 14 }}>{d.mood ? getMoodById(d.mood)?.emoji : ' '}</Text>
               <Text style={styles.dayLabel}>{DAYS[new Date(d.date).getDay()]}</Text>
             </View>
           ))}
         </View>
+        <Text style={[styles.cardSub, { marginTop: 10, fontSize: 11 }]}>
+          Ligne du bas : météo des émotions déclarée par {profile.childName} 🃏 = joker utilisé
+        </Text>
       </View>
+
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <Text style={{ fontSize: 26 }}>🃏</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Jokers anti-frustration</Text>
+            <Text style={styles.cardSub}>
+              {getJokersLeft()} joker{getJokersLeft() > 1 ? 's' : ''} restant{getJokersLeft() > 1 ? 's' : ''} cette semaine (2 max).
+              Un joker permet à {profile.childName} de passer une journée difficile sans casser sa série — le droit à l'erreur fait partie de l'apprentissage.
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.reportBtn} onPress={handleExportReport}>
+        <Text style={{ fontSize: 22 }}>📄</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.reportTitle}>Rapport pour le praticien</Text>
+          <Text style={styles.reportSub}>
+            PDF des 30 derniers jours : routines, humeurs, observations — à partager avant la consultation
+          </Text>
+        </View>
+        {!isPremium && <View style={styles.lockPill}><Text style={styles.lockPillText}>🔒 Premium</Text></View>}
+      </TouchableOpacity>
 
       <View style={styles.statsGrid}>
         {[
@@ -410,6 +464,7 @@ export default function ParentDashboardScreen({ navigation }) {
             <Text style={styles.cardTitle}>Ce que vous déverrouillez :</Text>
             {[
               '🌙  Routine du soir complète',
+              '📄  Rapport PDF pour le praticien',
               '⚙️  Personnalisation des tâches',
               '🔔  Notifications quotidiennes',
               '📊  Statistiques avancées',
@@ -524,6 +579,14 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.premium, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
   premiumCtaText: { fontSize: 17, fontWeight: '900', color: COLORS.white },
+  reportBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 12,
+    borderWidth: 2, borderColor: COLORS.primary,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
+  },
+  reportTitle: { fontSize: 15, fontWeight: '800', color: COLORS.primary },
+  reportSub: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 16, marginTop: 2 },
   featureItem: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
   featureText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
   restDayRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
