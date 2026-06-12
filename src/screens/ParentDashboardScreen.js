@@ -8,7 +8,7 @@ import * as Sharing from 'expo-sharing';
 import { COLORS } from '../constants/colors';
 import { ROUTINES } from '../constants/routineData';
 import { getMoodById } from '../constants/moodData';
-import { buildPractitionerReport } from '../utils/reportGenerator';
+import { buildPractitionerReport, getAvailableMonths } from '../utils/reportGenerator';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import { useNotifications } from '../hooks/useNotifications';
@@ -45,6 +45,7 @@ export default function ParentDashboardScreen({ navigation }) {
   const [notifSettings, setNotifSettings] = useState({
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
   });
+  const [reportLoading, setReportLoading] = useState(null);
   const [addingTask, setAddingTask] = useState(null);
   const [newTaskEmoji, setNewTaskEmoji] = useState('⭐');
   const [newTaskName, setNewTaskName] = useState('');
@@ -86,25 +87,29 @@ export default function ParentDashboardScreen({ navigation }) {
     Alert.alert('✓ Notifications enregistrées');
   };
 
-  const handleExportReport = async () => {
+  const handleExportReport = async (year, month, label) => {
     if (!isPremium) {
       navigation.navigate('Paywall');
       return;
     }
+    const key = `${year}-${month}`;
+    setReportLoading(key);
     try {
-      const html = buildPractitionerReport(useAppStore.getState());
+      const html = buildPractitionerReport(useAppStore.getState(), year, month);
       const { uri } = await Print.printToFileAsync({ html });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
-          dialogTitle: `Rapport FocusHéros — ${profile.childName}`,
+          dialogTitle: `Rapport FocusHéros — ${profile.childName} — ${label}`,
           UTI: 'com.adobe.pdf',
         });
       } else {
         Alert.alert('✓ Rapport généré', `PDF enregistré : ${uri}`);
       }
     } catch (e) {
-      Alert.alert('Erreur', "Impossible de générer le rapport. Réessayez.");
+      Alert.alert('Erreur', 'Impossible de générer le rapport. Réessayez.');
+    } finally {
+      setReportLoading(null);
     }
   };
 
@@ -162,16 +167,45 @@ export default function ParentDashboardScreen({ navigation }) {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.reportBtn} onPress={handleExportReport}>
-        <Text style={{ fontSize: 22 }}>📄</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.reportTitle}>Rapport pour le praticien</Text>
-          <Text style={styles.reportSub}>
-            PDF des 30 derniers jours : routines, humeurs, observations — à partager avant la consultation
-          </Text>
+      <View style={styles.reportCard}>
+        <View style={styles.reportCardHeader}>
+          <Text style={{ fontSize: 22 }}>📄</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.reportTitle}>Rapports pour le praticien</Text>
+            <Text style={styles.reportSub}>PDF mensuel à partager avant la consultation</Text>
+          </View>
+          {!isPremium && <View style={styles.lockPill}><Text style={styles.lockPillText}>🔒 Premium</Text></View>}
         </View>
-        {!isPremium && <View style={styles.lockPill}><Text style={styles.lockPillText}>🔒 Premium</Text></View>}
-      </TouchableOpacity>
+        {getAvailableMonths(useAppStore.getState().history).map(({ year, month, label, isCurrent, dayCount }) => {
+          const key = `${year}-${month}`;
+          const isLoading = reportLoading === key;
+          return (
+            <TouchableOpacity
+              key={key}
+              style={styles.monthRow}
+              onPress={() => handleExportReport(year, month, label)}
+              disabled={isLoading}
+            >
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.monthLabel}>{label}</Text>
+                  {isCurrent && (
+                    <View style={styles.currentBadge}>
+                      <Text style={styles.currentBadgeText}>en cours</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.monthSub}>
+                  {dayCount > 0 ? `${dayCount} jour${dayCount > 1 ? 's' : ''} enregistré${dayCount > 1 ? 's' : ''}` : 'Aucune donnée encore'}
+                </Text>
+              </View>
+              <Text style={[styles.downloadBtn, isLoading && { opacity: 0.4 }]}>
+                {isLoading ? '⏳' : '⬇️ PDF'}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       <View style={styles.statsGrid}>
         {[
@@ -577,14 +611,25 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.premium, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
   premiumCtaText: { fontSize: 17, fontWeight: '900', color: COLORS.white },
-  reportBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
+  reportCard: {
     backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 12,
     borderWidth: 2, borderColor: COLORS.primary,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
+  reportCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   reportTitle: { fontSize: 15, fontWeight: '800', color: COLORS.primary },
   reportSub: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 16, marginTop: 2 },
+  monthRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.border,
+  },
+  monthLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  monthSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  currentBadge: {
+    backgroundColor: '#D1FAE5', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+  },
+  currentBadgeText: { fontSize: 10, fontWeight: '700', color: '#065F46' },
+  downloadBtn: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   featureItem: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: COLORS.border },
   featureText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
   restDayRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },

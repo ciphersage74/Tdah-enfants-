@@ -1,10 +1,10 @@
 import { getMoodById } from '../constants/moodData';
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+export const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
 const fmtDate = (iso) => {
-  const d = new Date(iso);
+  const d = new Date(iso + 'T00:00:00');
   return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
 };
 
@@ -14,17 +14,48 @@ const cell = (entry) => {
   return '<td class="done">✓ Faite</td>';
 };
 
-// Builds the 30-day practitioner report as printable HTML.
-export const buildPractitionerReport = (state) => {
+// Returns the list of months (most recent first) that have at least one history entry.
+// Always includes current month even if empty.
+export const getAvailableMonths = (history = {}) => {
+  const monthSet = new Set();
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  monthSet.add(currentKey);
+  Object.keys(history).forEach((dateStr) => {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) monthSet.add(`${parts[0]}-${parts[1]}`);
+  });
+  return Array.from(monthSet)
+    .sort()
+    .reverse()
+    .map((key) => {
+      const [y, m] = key.split('-').map(Number);
+      const isCurrent = key === currentKey;
+      // Count days with at least one entry in that month
+      const dayCount = Object.keys(history).filter((d) => d.startsWith(key)).length;
+      return { year: y, month: m - 1, label: `${MONTHS_FR[m - 1]} ${y}`, isCurrent, dayCount };
+    });
+};
+
+// Builds the practitioner PDF report for a specific month.
+// year: full year (2026), month: 0-indexed JS month (0=Jan).
+// Defaults to current month.
+export const buildPractitionerReport = (state, year, month) => {
   const {
     childName, childAge, history = {}, moodLog = {}, restDays = [],
     streak, level, totalTasksDone, totalRoutinesDone, jokersUsedDates = [], isPremium,
   } = state;
 
-  const today = new Date();
+  const now = new Date();
+  const targetYear  = year  ?? now.getFullYear();
+  const targetMonth = month ?? now.getMonth();
+  const isCurrent   = targetYear === now.getFullYear() && targetMonth === now.getMonth();
+
+  // Build every day of the target month (up to today if current month)
+  const firstDay  = new Date(targetYear, targetMonth, 1);
+  const lastDay   = isCurrent ? now : new Date(targetYear, targetMonth + 1, 0);
   const days = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86400000);
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
     const iso = d.toISOString().split('T')[0];
     days.push({
       iso,
@@ -32,29 +63,30 @@ export const buildPractitionerReport = (state) => {
       morning: history[iso]?.morning,
       evening: history[iso]?.evening,
       mood: moodLog[iso] || null,
-      rest: restDays.includes(d.getDay()),
+      rest: (restDays || []).includes(d.getDay()),
     });
   }
 
-  const activeDays = days.filter((d) => !d.rest);
+  const activeDays  = days.filter((d) => !d.rest);
   const morningDone = activeDays.filter((d) => d.morning?.completed && !d.morning?.jokered).length;
   const eveningDone = activeDays.filter((d) => d.evening?.completed && !d.evening?.jokered).length;
   const morningRate = activeDays.length ? Math.round((morningDone / activeDays.length) * 100) : 0;
   const eveningRate = activeDays.length ? Math.round((eveningDone / activeDays.length) * 100) : 0;
 
-  const monthStart = new Date(today.getTime() - 29 * 86400000);
-  const jokersUsed = jokersUsedDates.filter((d) => new Date(d) >= monthStart).length;
+  const jokersUsed = jokersUsedDates.filter((d) => {
+    const date = new Date(d);
+    return date.getFullYear() === targetYear && date.getMonth() === targetMonth;
+  }).length;
 
   const moodCounts = { great: 0, tired: 0, angry: 0 };
   days.forEach((d) => { if (d.mood && moodCounts[d.mood] !== undefined) moodCounts[d.mood]++; });
   const moodTotal = moodCounts.great + moodCounts.tired + moodCounts.angry;
 
-  // Simple correlation insight: completion rate on days following each declared mood
   const insights = [];
   ['tired', 'angry'].forEach((moodId) => {
     const afterMood = days.filter((d, i) => i > 0 && days[i - 1].mood === moodId && !d.rest);
     if (afterMood.length >= 3) {
-      const ok = afterMood.filter((d) => d.morning?.completed).length;
+      const ok   = afterMood.filter((d) => d.morning?.completed).length;
       const rate = Math.round((ok / afterMood.length) * 100);
       const mood = getMoodById(moodId);
       insights.push(`Lendemains de jours « ${mood.label} » : routine du matin réussie à ${rate}% (${ok}/${afterMood.length} jours).`);
@@ -62,9 +94,9 @@ export const buildPractitionerReport = (state) => {
   });
 
   const moodRow = (moodId) => {
-    const mood = getMoodById(moodId);
+    const mood  = getMoodById(moodId);
     const count = moodCounts[moodId];
-    const pct = moodTotal ? Math.round((count / moodTotal) * 100) : 0;
+    const pct   = moodTotal ? Math.round((count / moodTotal) * 100) : 0;
     return `
       <div class="mood-row">
         <span class="mood-emoji">${mood.emoji}</span>
@@ -77,9 +109,15 @@ export const buildPractitionerReport = (state) => {
   const tableRows = days.slice().reverse().map((d) => `
     <tr class="${d.rest ? 'rest' : ''}">
       <td class="date">${fmtDate(d.iso)}</td>
-      ${d.rest ? '<td colspan="2" class="restcell">🌴 Jour de repos</td>' : `${cell(d.morning)}${isPremium ? cell(d.evening) : '<td class="miss">·</td>'}`}
+      ${d.rest
+        ? '<td colspan="2" class="restcell">🌴 Jour de repos</td>'
+        : `${cell(d.morning)}${isPremium ? cell(d.evening) : '<td class="miss">·</td>'}`}
       <td class="mood">${d.mood ? `${getMoodById(d.mood).emoji} ${getMoodById(d.mood).label}` : '—'}</td>
     </tr>`).join('');
+
+  const periodLabel = isCurrent
+    ? `${MONTHS_FR[targetMonth]} ${targetYear} (en cours — du 1er au ${lastDay.getDate()})`
+    : `${MONTHS_FR[targetMonth]} ${targetYear} (mois complet — ${days.length} jours)`;
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -122,8 +160,7 @@ export const buildPractitionerReport = (state) => {
     </div>
     <div class="period">
       Rapport de suivi des routines<br/>
-      <b>${fmtDate(days[0].iso)} → ${fmtDate(days[days.length - 1].iso)}</b><br/>
-      (30 derniers jours)
+      <b>${periodLabel}</b>
     </div>
   </div>
 
@@ -131,9 +168,9 @@ export const buildPractitionerReport = (state) => {
   <div class="kpis">
     <div class="kpi"><div class="val">${morningRate}%</div><div class="lbl">Routine du matin</div></div>
     ${isPremium ? `<div class="kpi"><div class="val">${eveningRate}%</div><div class="lbl">Routine du soir</div></div>` : ''}
-    <div class="kpi"><div class="val">${streak}</div><div class="lbl">Jours consécutifs (série actuelle)</div></div>
-    <div class="kpi"><div class="val">${jokersUsed}</div><div class="lbl">Jokers utilisés (jours difficiles)</div></div>
-    <div class="kpi"><div class="val">${totalTasksDone}</div><div class="lbl">Tâches accomplies (total)</div></div>
+    <div class="kpi"><div class="val">${streak}</div><div class="lbl">Série actuelle (jours)</div></div>
+    <div class="kpi"><div class="val">${jokersUsed}</div><div class="lbl">Jokers ce mois</div></div>
+    <div class="kpi"><div class="val">${activeDays.length}</div><div class="lbl">Jours actifs</div></div>
   </div>
 
   ${moodTotal > 0 ? `
@@ -153,9 +190,9 @@ export const buildPractitionerReport = (state) => {
   </table>
 
   <div class="note">
-    Rapport généré automatiquement par l'application FocusHéros (niveau ${level}, ${totalRoutinesDone} routines accomplies au total).
+    Rapport généré automatiquement par l'application FocusHéros (niveau ${level}, ${totalRoutinesDone} routines accomplies au total, ${totalTasksDone} tâches).
     Les données sont déclaratives et enregistrées localement sur l'appareil familial — aucune donnée n'est transmise à un serveur.
-    Le « Joker » permet à l'enfant de passer une routine lors d'un jour difficile sans casser sa dynamique (apprentissage du droit à l'erreur).
+    Le « Joker » permet à l'enfant de passer une routine lors d'un jour difficile sans casser sa dynamique.
     Ce document est destiné à faciliter le dialogue avec le professionnel de santé et ne constitue pas un avis médical.
   </div>
 </body>
