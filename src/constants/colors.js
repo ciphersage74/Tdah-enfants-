@@ -64,15 +64,16 @@ export const AVATAR_LABELS = {
   hero: 'Héros', wizard: 'Sorcier', fox: 'Renard',
 };
 
-// Fine-tuning offsets (pixels) for item layers per character.
-// Adjust visually after first build: negative = up/left, positive = down/right.
+// Fine-tuning offsets (pixels on the 512×512 item layer canvas) per character.
+// Adjust visually: negative = up/left, positive = down/right.
 export const AVATAR_ANCHORS = {
-  superhero: { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  dragon:    { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  ninja:     { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  astronaut: { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  princess:  { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  fairy:     { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  mermaid:   { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
-  witch:     { hatOffsetY: 0, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  superhero: { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  dragon:    { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  ninja:     { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  astronaut: { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  princess:  { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  fairy:     { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  // La tête de la sirène est décalée à droite et plus basse que les autres persos.
+  mermaid:   { hatOffsetX: 50, hatOffsetY: 40, weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
+  witch:     { hatOffsetX: 0,  hatOffsetY: 0,  weaponOffsetX: 0, weaponOffsetY: 0, companionOffsetX: 0, companionOffsetY: 0 },
 };
