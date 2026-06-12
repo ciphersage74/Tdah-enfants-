@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -73,6 +73,27 @@ export default function PaywallScreen({ navigation }) {
           ))}
         </View>
 
+        {/* Comment fonctionne l'essai — la transparence augmente la conversion */}
+        <View style={styles.timelineBox}>
+          <Text style={styles.timelineTitle}>Comment fonctionne l'essai gratuit</Text>
+          {[
+            { emoji: '🔓', day: "Aujourd'hui", desc: 'Tout est débloqué immédiatement. Profitez de chaque fonctionnalité.' },
+            { emoji: '🔔', day: 'Jour 5', desc: "Rappel par notification avant la fin de l'essai. Aucune surprise." },
+            { emoji: '⭐', day: 'Jour 7', desc: "L'abonnement démarre. Annulable à tout moment avant, sans frais." },
+          ].map((s, i, arr) => (
+            <View key={i} style={styles.timelineRow}>
+              <View style={styles.timelineLeft}>
+                <View style={styles.timelineDot}><Text style={{ fontSize: 16 }}>{s.emoji}</Text></View>
+                {i < arr.length - 1 && <View style={styles.timelineLine} />}
+              </View>
+              <View style={{ flex: 1, paddingBottom: i < arr.length - 1 ? 14 : 0 }}>
+                <Text style={styles.timelineDay}>{s.day}</Text>
+                <Text style={styles.timelineDesc}>{s.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
         {/* Plans */}
         <View style={styles.plansRow}>
           {PLANS.map((plan) => (
@@ -107,8 +128,46 @@ export default function PaywallScreen({ navigation }) {
         {/* CTA */}
         <TouchableOpacity style={styles.ctaBtn} onPress={handleSubscribe}>
           <LinearGradient colors={GRADIENTS.premium} style={styles.ctaGradient}>
-            <Text style={styles.ctaText}>🚀 Commencer mon essai gratuit 7 jours</Text>
+            <Text style={styles.ctaText}>🚀 Commencer mes 7 jours gratuits</Text>
+            <Text style={styles.ctaSubText}>
+              puis {selectedPlan === 'annual' ? '49,99 €/an' : '9,99 €/mois'} · sans engagement
+            </Text>
           </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Réassurance — lever les freins à l'achat */}
+        <View style={styles.trustRow}>
+          {[
+            { emoji: '🔒', label: 'Paiement sécurisé\nGoogle Play' },
+            { emoji: '🔔', label: 'Rappel avant\nla fin de l\'essai' },
+            { emoji: '✕', label: 'Annulation\nen 2 clics' },
+          ].map((t, i) => (
+            <View key={i} style={styles.trustItem}>
+              <Text style={{ fontSize: 18 }}>{t.emoji}</Text>
+              <Text style={styles.trustLabel}>{t.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* La gratuité du cœur de l'app rassure : pas de blocage, pas de désinstallation */}
+        <View style={styles.freeForeverBox}>
+          <Text style={styles.freeForeverText}>
+            ☀️ La routine du matin, les badges et la boutique restent{' '}
+            <Text style={{ fontWeight: '900' }}>100% gratuits pour toujours</Text>.
+            Premium ajoute la routine du soir, les rapports PDF et la personnalisation complète.
+          </Text>
+        </View>
+
+        {/* Comment résilier — la transparence évite les avis 1 étoile */}
+        <TouchableOpacity
+          style={styles.cancelInfoBox}
+          onPress={() => Linking.openURL('https://play.google.com/store/account/subscriptions').catch(() => {})}
+        >
+          <Text style={styles.cancelInfoTitle}>Comment résilier ?</Text>
+          <Text style={styles.cancelInfoText}>
+            Google Play → Profil → Paiements et abonnements → Abonnements → FocusHéros → Résilier.
+            Effet à la fin de la période en cours, aucun frais caché. Toucher ici pour ouvrir la page.
+          </Text>
         </TouchableOpacity>
 
         {/* Visible uniquement en build de développement — absent du build production */}
@@ -119,9 +178,9 @@ export default function PaywallScreen({ navigation }) {
         )}
 
         <Text style={styles.legalText}>
-          Résiliable à tout moment. Après l'essai gratuit,{' '}
+          Résiliable à tout moment depuis Google Play. Après l'essai gratuit de 7 jours,{' '}
           {selectedPlan === 'annual' ? '49,99 €/an' : '9,99 €/mois'}.
-          Conforme RGPD.
+          Conforme RGPD — aucune donnée de votre enfant ne quitte le téléphone.
         </Text>
 
         <TouchableOpacity onPress={handleRestore} style={{ alignItems: 'center', padding: 16 }}>
@@ -248,6 +307,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaText: { fontSize: 16, fontWeight: '900', color: COLORS.white },
+  ctaSubText: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.85)', marginTop: 3 },
+  timelineBox: {
+    marginHorizontal: 16, marginBottom: 16, backgroundColor: COLORS.white,
+    borderRadius: 20, padding: 18,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
+  },
+  timelineTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 14 },
+  timelineRow: { flexDirection: 'row', gap: 12 },
+  timelineLeft: { alignItems: 'center', width: 36 },
+  timelineDot: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surface,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  timelineLine: { flex: 1, width: 2, backgroundColor: COLORS.border, marginVertical: 2 },
+  timelineDay: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary },
+  timelineDesc: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 17, marginTop: 1 },
+  trustRow: { flexDirection: 'row', marginHorizontal: 16, marginTop: 14, gap: 8 },
+  trustItem: { flex: 1, alignItems: 'center', gap: 4 },
+  trustLabel: { fontSize: 10, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '600', lineHeight: 13 },
+  freeForeverBox: {
+    marginHorizontal: 16, marginTop: 14, backgroundColor: '#ECFDF5',
+    borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#A7F3D0',
+  },
+  freeForeverText: { fontSize: 12, color: '#065F46', lineHeight: 18 },
+  cancelInfoBox: {
+    marginHorizontal: 16, marginTop: 10, backgroundColor: COLORS.white,
+    borderRadius: 14, padding: 14, borderWidth: 1, borderColor: COLORS.border,
+  },
+  cancelInfoTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
+  cancelInfoText: { fontSize: 11, color: COLORS.textSecondary, lineHeight: 16 },
   legalText: {
     fontSize: 11,
     color: COLORS.textMuted,

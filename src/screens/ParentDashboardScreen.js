@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, TextInput,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, TextInput, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
@@ -101,6 +101,28 @@ export default function ParentDashboardScreen({ navigation }) {
       const toAdd = ROUTINES[routineId].defaultTasks.find((t) => t.id === taskId);
       if (toAdd) updateCustomTasks(routineId, [...tasks, toAdd]);
     }
+  };
+
+  // Chaque enfant a son rythme : le parent ajuste la durée de chaque tâche
+  const setTaskDuration = (routineId, taskId, duration) => {
+    const tasks = profile.customTasks?.[routineId] || ROUTINES[routineId].defaultTasks;
+    updateCustomTasks(routineId, tasks.map((t) => (t.id === taskId ? { ...t, duration } : t)));
+  };
+
+  const fmtDuration = (s) => (Number(s) >= 60 ? `${Math.round(s / 60)} min` : `${s || 0}s`);
+
+  const askTaskDuration = (routineId, task) => {
+    Alert.alert(
+      `⏱ ${task.name}`,
+      'Temps accordé pour cette tâche :',
+      [
+        ...TASK_DURATIONS.map((d) => ({
+          text: d.label + (task.duration === d.value ? '  ✓' : ''),
+          onPress: () => setTaskDuration(routineId, task.id, d.value),
+        })),
+        { text: 'Annuler', style: 'cancel' },
+      ]
+    );
   };
 
   const handleSaveNotifs = async () => {
@@ -350,18 +372,32 @@ export default function ParentDashboardScreen({ navigation }) {
               <Text style={styles.cardSub}>Débloquez Premium pour personnaliser</Text>
             ) : (
               <>
-                {routine.defaultTasks.map((task) => (
-                  <View key={task.id} style={styles.taskRow}>
-                    <Text style={styles.taskEmoji}>{task.emoji}</Text>
-                    <Text style={styles.taskName}>{task.name}</Text>
-                    <Switch
-                      value={activeIds.has(task.id)}
-                      onValueChange={() => toggleTask(routine.id, task.id)}
-                      trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-                      thumbColor={activeIds.has(task.id) ? COLORS.primary : '#fff'}
-                    />
-                  </View>
-                ))}
+                <Text style={[styles.cardSub, { fontSize: 11, marginBottom: 4 }]}>
+                  ⏱ Touchez la durée pour l'adapter au rythme de votre enfant
+                </Text>
+                {routine.defaultTasks.map((task) => {
+                  const activeTask = activeTasks.find((t) => t.id === task.id);
+                  return (
+                    <View key={task.id} style={styles.taskRow}>
+                      <Text style={styles.taskEmoji}>{task.emoji}</Text>
+                      <Text style={styles.taskName}>{task.name}</Text>
+                      {activeTask && (
+                        <TouchableOpacity
+                          style={styles.durationChip}
+                          onPress={() => askTaskDuration(routine.id, activeTask)}
+                        >
+                          <Text style={styles.durationChipText}>⏱ {fmtDuration(activeTask.duration)}</Text>
+                        </TouchableOpacity>
+                      )}
+                      <Switch
+                        value={activeIds.has(task.id)}
+                        onValueChange={() => toggleTask(routine.id, task.id)}
+                        trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+                        thumbColor={activeIds.has(task.id) ? COLORS.primary : '#fff'}
+                      />
+                    </View>
+                  );
+                })}
 
                 {customTasksList.map((task) => (
                   <View key={task.id} style={[styles.taskRow, styles.customTaskRow]}>
@@ -370,6 +406,12 @@ export default function ParentDashboardScreen({ navigation }) {
                       <Text style={[styles.taskName, { color: COLORS.primary }]}>{task.name}</Text>
                       <Text style={{ fontSize: 10, color: COLORS.textMuted }}>Personnalisée</Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.durationChip}
+                      onPress={() => askTaskDuration(routine.id, task)}
+                    >
+                      <Text style={styles.durationChipText}>⏱ {fmtDuration(task.duration)}</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDeleteCustomTask(routine.id, task.id)} style={styles.deleteBtn}>
                       <Text style={{ fontSize: 16 }}>🗑️</Text>
                     </TouchableOpacity>
@@ -572,13 +614,31 @@ export default function ParentDashboardScreen({ navigation }) {
   const renderSubscription = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
       {isPremium ? (
-        <View style={[styles.card, { backgroundColor: '#D1FAE5', alignItems: 'center', padding: 28 }]}>
-          <Text style={{ fontSize: 44, marginBottom: 8 }}>⭐</Text>
-          <Text style={[styles.cardTitle, { color: '#065F46', fontSize: 20, textAlign: 'center' }]}>Premium actif</Text>
-          <Text style={[styles.cardSub, { textAlign: 'center', color: '#059669', lineHeight: 20 }]}>
-            Toutes les fonctionnalités sont débloquées.{'\n'}Merci pour votre confiance !
-          </Text>
-        </View>
+        <>
+          <View style={[styles.card, { backgroundColor: '#D1FAE5', alignItems: 'center', padding: 28 }]}>
+            <Text style={{ fontSize: 44, marginBottom: 8 }}>⭐</Text>
+            <Text style={[styles.cardTitle, { color: '#065F46', fontSize: 20, textAlign: 'center' }]}>Premium actif</Text>
+            <Text style={[styles.cardSub, { textAlign: 'center', color: '#059669', lineHeight: 20 }]}>
+              Toutes les fonctionnalités sont débloquées.{'\n'}Merci pour votre confiance !
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => Linking.openURL('https://play.google.com/store/account/subscriptions').catch(() => {})}
+          >
+            <View style={styles.row}>
+              <Text style={{ fontSize: 22 }}>⚙️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>Gérer mon abonnement</Text>
+                <Text style={styles.cardSub}>
+                  Modifier ou résilier à tout moment depuis Google Play → Abonnements.
+                  La résiliation prend effet à la fin de la période en cours.
+                </Text>
+              </View>
+              <Text style={{ fontSize: 22, color: COLORS.textMuted }}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </>
       ) : (
         <>
           <TouchableOpacity
@@ -746,6 +806,12 @@ const styles = StyleSheet.create({
   restDayLabel: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary },
   restDayLabelOn: { color: '#065F46' },
   customTaskRow: { backgroundColor: '#F5F3FF', borderRadius: 8, marginHorizontal: -4, paddingHorizontal: 4 },
+  durationChip: {
+    backgroundColor: COLORS.surface, borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 5,
+    borderWidth: 1, borderColor: COLORS.primaryLight,
+  },
+  durationChipText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
   deleteBtn: { padding: 4 },
   addTaskBtn: {
     marginTop: 10, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.primary,

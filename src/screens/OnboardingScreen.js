@@ -27,6 +27,8 @@ export default function OnboardingScreen({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const goNext = () => {
+    // Prénom obligatoire — le bouton est désactivé mais on garde une garde dure
+    if (STEPS[step] === 'name' && !childName.trim()) return;
     if (STEPS[step] === 'gender') {
       setAvatarId(gender === 'boy' ? BOY_AVATARS[0] : GIRL_AVATARS[0]);
     }
@@ -44,7 +46,9 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   const handleFinish = () => {
-    completeOnboarding(childName.trim(), childAge, avatarId, pin, gender, recoveryCode);
+    const name = childName.trim();
+    if (!name) { setStep(0); return; }
+    completeOnboarding(name, childAge, avatarId, pin, gender, recoveryCode);
     navigation.replace('Home');
   };
 

@@ -27,6 +27,7 @@ export default function QuestScreen({ navigation, route }) {
   const [taskIndex, setTaskIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(null);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [timerExpired, setTimerExpired] = useState(false);
   const [totalCoins, setTotalCoins] = useState(0);
   const [toastBadge, setToastBadge] = useState(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -43,6 +44,7 @@ export default function QuestScreen({ navigation, route }) {
   useEffect(() => {
     slideY.setValue(40);
     fadeIn.setValue(0);
+    setTimerExpired(false);
     Animated.parallel([
       Animated.spring(slideY, { toValue: 0, tension: 80, friction: 12, useNativeDriver: true }),
       Animated.timing(fadeIn, { toValue: 1, duration: 250, useNativeDriver: true }),
@@ -56,6 +58,7 @@ export default function QuestScreen({ navigation, route }) {
     if (timeLeft === 0 && timerRunning) {
       clearInterval(timerRef.current);
       setTimerRunning(false);
+      setTimerExpired(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }, [timeLeft, timerRunning]);
@@ -67,11 +70,23 @@ export default function QuestScreen({ navigation, route }) {
 
   const startTimer = () => {
     if (timerRunning) return;
+    setTimerExpired(false);
     setTimeLeft(currentTask.duration);
     setTimerRunning(true);
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => Math.max(t - 1, 0));
     }, 1000);
+  };
+
+  const addExtraTime = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimerExpired(false);
+    setTimeLeft(120);
+    setTimerRunning(true);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => Math.max(t - 1, 0));
+    }, 1000);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -117,6 +132,7 @@ export default function QuestScreen({ navigation, route }) {
       }
       setTimeLeft(null);
       setTimerRunning(false);
+      setTimerExpired(false);
       setTaskIndex((i) => i + 1);
       busyRef.current = false;
     }
@@ -143,6 +159,7 @@ export default function QuestScreen({ navigation, route }) {
           onPress: () => {
             if (timerRef.current) { clearInterval(timerRef.current); setTimerRunning(false); }
             setTimeLeft(null);
+            setTimerExpired(false);
             if (isLast) {
               navigation.goBack();
             } else {
@@ -187,11 +204,18 @@ export default function QuestScreen({ navigation, route }) {
           <Text style={styles.taskEmoji}>{currentTask.emoji}</Text>
           <Text style={styles.taskName}>{currentTask.name}</Text>
 
-          {timeLeft !== null ? (
+          {timerExpired ? (
+            <View style={styles.expiredBlock}>
+              <Text style={styles.expiredDisplay}>⏰ Temps écoulé !</Text>
+              <Text style={styles.expiredSub}>Tu as fini ou il te faut plus de temps ?</Text>
+              <TouchableOpacity style={styles.addTimeBtn} onPress={addExtraTime}>
+                <Text style={styles.addTimeBtnIcon}>⏱</Text>
+                <Text style={styles.addTimeBtnText}>+2 minutes</Text>
+              </TouchableOpacity>
+            </View>
+          ) : timeLeft !== null ? (
             <View style={styles.timerBlock}>
-              <Text style={[styles.timerDisplay, timeLeft === 0 && styles.timerDone]}>
-                {timeLeft === 0 ? '✓ Temps !' : formatTime(timeLeft)}
-              </Text>
+              <Text style={styles.timerDisplay}>{formatTime(timeLeft)}</Text>
               <View style={styles.timerTrack}>
                 <View style={[styles.timerFill, { width: `${timerRatio * 100}%` }]} />
               </View>
@@ -211,8 +235,10 @@ export default function QuestScreen({ navigation, route }) {
             <Text style={styles.runningCoins}>🪙 {totalCoins} pièces gagnées</Text>
           )}
           <Animated.View style={{ transform: [{ scale: btnScale }] }}>
-            <TouchableOpacity style={styles.doneBtn} onPress={handleDone}>
-              <Text style={styles.doneBtnText}>MISSION ACCOMPLIE ✓</Text>
+            <TouchableOpacity style={[styles.doneBtn, timerExpired && styles.doneBtnExpired]} onPress={handleDone}>
+              <Text style={[styles.doneBtnText, timerExpired && styles.doneBtnExpiredText]}>
+                {timerExpired ? '✓  OUI, J\'AI TERMINÉ !' : 'MISSION ACCOMPLIE ✓'}
+              </Text>
             </TouchableOpacity>
           </Animated.View>
           <TouchableOpacity onPress={handleSkip} style={styles.skipBtn}>
@@ -306,4 +332,24 @@ const styles = StyleSheet.create({
   doneBtnText: { fontSize: 18, fontWeight: '900', color: COLORS.primary, letterSpacing: 0.5 },
   skipBtn: { alignItems: 'center', paddingVertical: 10 },
   skipText: { fontSize: 13, color: 'rgba(255,255,255,0.6)' },
+
+  expiredBlock: {
+    width: '100%', alignItems: 'center', gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 22, padding: 24,
+  },
+  expiredDisplay: { fontSize: 36, fontWeight: '900', color: COLORS.white },
+  expiredSub: { fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', fontWeight: '600' },
+  addTimeBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16,
+  },
+  addTimeBtnIcon: { fontSize: 22 },
+  addTimeBtnText: { fontSize: 17, fontWeight: '900', color: COLORS.white },
+
+  doneBtnExpired: { backgroundColor: '#D1FAE5', shadowColor: '#10B981' },
+  doneBtnExpiredText: { color: '#065F46' },
 });
