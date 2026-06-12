@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, TextInput,
 } from 'react-native';
@@ -10,6 +10,7 @@ import { ROUTINES } from '../constants/routineData';
 import { getMoodById } from '../constants/moodData';
 import { buildPractitionerReport, getAvailableMonths } from '../utils/reportGenerator';
 import { exportBackup, importBackup } from '../utils/backup';
+import { maybeAskForRating } from '../utils/rating';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
 import { useNotifications } from '../hooks/useNotifications';
@@ -39,7 +40,7 @@ export default function ParentDashboardScreen({ navigation }) {
     isPremium, updateCustomTasks, addCustomTask, removeCustomTask, setParentMode,
     getWeeklyStats, unlockPremium, restDays, updateRestDays, getJokersLeft,
     notifMorningEnabled, notifEveningEnabled, notifMorningTime, notifEveningTime,
-    importState,
+    importState, ratingPromptCount, recordRatingPrompt,
   } = useAppStore();
   const profile = useActiveProfile();
   const { saveAndApply } = useNotifications();
@@ -52,6 +53,10 @@ export default function ParentDashboardScreen({ navigation }) {
   const [newTaskEmoji, setNewTaskEmoji] = useState('⭐');
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDuration, setNewTaskDuration] = useState(300);
+
+  useEffect(() => {
+    maybeAskForRating(profile?.totalRoutinesDone || 0, ratingPromptCount, recordRatingPrompt);
+  }, []);
 
   if (!profile) return null;
 

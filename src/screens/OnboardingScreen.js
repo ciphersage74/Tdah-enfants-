@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Animated, KeyboardAvoidingView, Platform, ScrollView, Linking,
+  Animated, KeyboardAvoidingView, Platform, ScrollView, Linking, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -48,14 +48,21 @@ export default function OnboardingScreen({ navigation }) {
     navigation.replace('Home');
   };
 
-  const handleEmailRecoveryCode = () => {
+  const handleEmailRecoveryCode = async () => {
     const subject = encodeURIComponent('FocusHéros — Code de secours');
     const body = encodeURIComponent(
       `Code de secours FocusHéros : ${recoveryCode}\n\n` +
       'Ce code permet de réinitialiser le code parent si vous l\'oubliez.\n' +
       'Conservez cet email précieusement.'
     );
-    Linking.openURL(`mailto:?subject=${subject}&body=${body}`).catch(() => {});
+    try {
+      await Linking.openURL(`mailto:?subject=${subject}&body=${body}`);
+    } catch (_) {
+      Alert.alert(
+        'Aucune application email',
+        `Impossible d'ouvrir une app email sur ce téléphone.\n\nNotez le code à la main : ${recoveryCode}\n\nIl restera aussi visible dans Mode Parent → Config.`
+      );
+    }
   };
 
   const renderStep = () => {

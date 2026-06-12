@@ -7,7 +7,6 @@ import { COLORS, GRADIENTS } from '../constants/colors';
 import { MOODS } from '../constants/moodData';
 import { useAppStore } from '../store/useAppStore';
 import { useActiveProfile } from '../hooks/useActiveProfile';
-import { maybeAskForRating } from '../utils/rating';
 import HeroAvatar from '../components/HeroAvatar';
 
 const { width, height } = Dimensions.get('window');
@@ -50,7 +49,7 @@ function Confetti() {
 export default function CelebrationScreen({ navigation, route }) {
   const { coinsEarned, leveledUp, newLevel, newBadges = [], routineId } = route.params;
   const profile = useActiveProfile();
-  const { recordMood, hasMoodToday, totalRoutinesDone, ratingPromptCount, recordRatingPrompt } = useAppStore();
+  const { recordMood, hasMoodToday } = useAppStore();
   const [askMood] = useState(() => !hasMoodToday());
   const [pickedMood, setPickedMood] = useState(null);
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -62,11 +61,6 @@ export default function CelebrationScreen({ navigation, route }) {
       Animated.spring(scaleAnim, { toValue: 1, tension: 60, friction: 7, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
     ]).start();
-    // Demande de note Play Store après les confettis, aux paliers d'engagement
-    const ratingTimer = setTimeout(() => {
-      maybeAskForRating(totalRoutinesDone, ratingPromptCount || 0, recordRatingPrompt);
-    }, 3000);
-    return () => clearTimeout(ratingTimer);
   }, []);
 
   const handlePickMood = (moodId) => {
